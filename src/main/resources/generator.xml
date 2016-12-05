@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+	<entry key="basepackage">com.isoftoon.ld.fx</entry>
+	<entry key="outRoot">.\generator-output</entry>
+	<!-- 需要移除的表名前缀,使用逗号进行分隔多个前缀,示例值: t_,v_ -->
+	<entry key="tableRemovePrefixes">MM_,PP_,mm_,pp_</entry>
+	<!-- 数据库类型至java类型映射 -->
+	<entry key="java_typemapping.java.sql.Timestamp">java.util.Date</entry>
+	<entry key="java_typemapping.java.sql.Date">java.util.Date</entry>
+	<entry key="java_typemapping.java.sql.Time">java.util.Date</entry>
+	<entry key="java_typemapping.java.lang.Byte">Integer</entry>
+	<entry key="java_typemapping.java.lang.Short">Integer</entry>
+	<entry key="java_typemapping.java.math.BigDecimal">Long</entry>
+	<entry key="java_typemapping.java.sql.Clob">String</entry>
+	<!-- xlsx模板类型至java类型映射 -->
+	<entry key="java_typemapping.Date">java.util.Date</entry>
+	<entry key="java_typemapping.String">String</entry>
+	<entry key="java_typemapping.Integer">Integer</entry>
+	<entry key="java_typemapping.Long">Long</entry>
+	<entry key="java_typemapping.Double">Double</entry>
+
+	<!--
+	<entry key="jdbc_username">ld</entry>
+	<entry key="jdbc_password">LDRSpl@7050.</entry>
+	<entry key="jdbc_url">jdbc:sqlserver://192.168.1.113:1433;DatabaseName=lderp</entry>
+	<entry key="jdbc_driver">com.microsoft.sqlserver.jdbc.SQLServerDriver</entry>
+	-->
+
+	<entry key="jdbc_username">root</entry>
+	<entry key="jdbc_password">x5</entry>
+	<entry key="jdbc_url">jdbc:mysql://localhost:3306/erp?useUnicode=true&amp;characterEncoding=UTF-8</entry>
+	<entry key="jdbc_driver">com.mysql.jdbc.Driver</entry>
+</properties>
