@@ -49,11 +49,11 @@
 				<AnchorPane fx:id="detailAnchorPane" AnchorPane.bottomAnchor="1.0" AnchorPane.leftAnchor="1.0" AnchorPane.rightAnchor="1.0" AnchorPane.topAnchor="1.0">
 					<children>
 						<ToolBar fx:id="detailToolBar" prefHeight="50.0" prefWidth="200.0" AnchorPane.leftAnchor="1.0" AnchorPane.rightAnchor="1.0" AnchorPane.topAnchor="1.0" />
-						<GridPane AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="65.0" styleClass="font18">
+						<GridPane fx:id="detailGridPane" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="65.0" styleClass="font18">
 							<columnConstraints>
 								<ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="150.0" />
 								<ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="200.0" />
-								<ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="30.0" />
+								<ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="80.0" />
 				                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="150.0" />
 				                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="200.0" />
 							</columnConstraints>
@@ -96,11 +96,19 @@
 													>
 										<#if count != 1>
 								<Label text="${column.columnAlias}" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx}" />
-								<TextField GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+1}" />
+											<#if column.isDateTimeColumn>
+								<DatePicker fx:id="${column.columnNameLower}Picker" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+1}" />
+											<#else>
+								<TextField fx:id="${column.columnNameLower}Text" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+1}" />
+											</#if>
 										<#assign count = count + 1>
 										<#elseif count==1>
 								<Label text="${column.columnAlias}" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+3}" />
-								<TextField GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+4}" />
+											<#if column.isDateTimeColumn>
+								<DatePicker fx:id="${column.columnNameLower}Picker" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+4}" />
+											<#else>
+								<TextField fx:id="${column.columnNameLower}Text" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+4}" />
+											</#if>
 											<#assign count = 0>
 											<#assign rowIdx = rowIdx + 1>
 										</#if>

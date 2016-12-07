@@ -44,6 +44,18 @@ public class ${className}Service extends AbstractService {
         return list;
     }
 
+    <#list table.columns as column>
+        <#if column.columnNameLower=="name">
+    public Page<${className}> findByPage(PageRequest<${className}> pageRequest, String key) {
+        if (key==null || "".equals(key)) {
+            return findByPage(pageRequest);
+        }
+        Page<${className}> list = dao.find(pageRequest, "select t from ${className} t where t.name like '%" + key + "%'",new ArrayList<>().toArray());
+        return list;
+    }
+        </#if>
+    </#list>
+
     public void save(${className} model) throws IOException {
         dao.save(model);
     }

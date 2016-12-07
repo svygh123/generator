@@ -9,8 +9,10 @@ public class App {
         g.getGenerator().addTemplateRootDir(templatePath);
         // g.getGenerator().setOutRootDir("C:\\download\\eclipse\\workspace\\generator\\generator-output");
         g.deleteOutRootDir();
-        g.generateByTable("MM_InStock"); // 可多表生成
+        g.generateByTable("MM_Material", "MM_Supplier"); // 可多表生成MM_InStock
 // C:\download\eclipse\workspace\generator\generator-output\java_src\main\java\com\isoftoon\ld\fx\model
 // C:\download\eclipse\workspace\generator\generator-output\java_src\main\java\com\isoftoon\ld\fx\service
+// C:\download\eclipse\workspace\generator\generator-output\java_src\main\java\com\isoftoon\ld\fx\controller
+// C:\download\eclipse\workspace\generator\generator-output\java_src\main\java\com\isoftoon\ld\fx\dialog
     }
 }

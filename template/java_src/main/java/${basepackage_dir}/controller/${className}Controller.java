@@ -4,12 +4,10 @@
 <#assign classNameLower = className?uncap_first>
 package ${basepackage}.controller;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -19,8 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.isoftoon.fx.dialog.Dialog;
-import com.isoftoon.jbarcode.BarCodeImage;
-import com.isoftoon.ld.fx.config.Config2;
 import com.isoftoon.ld.fx.config.CurrentUserSession;
 import com.isoftoon.ld.fx.model.InStock;
 import com.isoftoon.ld.fx.model.Opperson;
@@ -34,6 +30,7 @@ import de.jensd.fx.glyphs.fontawesome.utils.FontAwesomeIconFactory;
 import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -41,7 +38,6 @@ import javafx.collections.ObservableList;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -51,13 +47,13 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.GridPane;
 
 public class ${className}Controller implements Initializable {
     static Logger logger = LoggerFactory.getLogger(${className}.class);
@@ -66,6 +62,7 @@ public class ${className}Controller implements Initializable {
     @FXML AnchorPane rootAnchorPane;
     @FXML AnchorPane mainAnchorPane;
     @FXML AnchorPane detailAnchorPane;
+    @FXML GridPane detailGridPane;
 
     @FXML TableView<${className}> ${classNameLower}Table;
 
@@ -79,12 +76,17 @@ public class ${className}Controller implements Initializable {
                         && column.columnNameLower!="unitCode"
                         && column.columnNameLower!="tareUnitCode"
                         && column.columnNameLower!="warehouseCode"
+                        && column.columnNameLower!="masterId"
                         && column.columnNameLower!="creatorId"
                         && column.columnNameLower!="updateTime"
                         && column.columnNameLower!="updator"
                         && column.columnNameLower!="updatorId"
                         >
+            <#if column.isDateTimeColumn>
+    @FXML DatePicker ${column.columnNameLower}Picker;
+            <#else>
     @FXML TextField ${column.columnNameLower}Text;
+            </#if>
         </#if>
     </#list>
 
@@ -107,9 +109,18 @@ public class ${className}Controller implements Initializable {
     private ${className}Service ${classNameLower}Service = new ${className}Service();
     private OppersonService oppersonService;
 
+    ChangeListener<String> forceIntegerListener = (observable, oldValue, newValue) -> {
+        if (!newValue.matches("\\d*"))
+            ((StringProperty) observable).set(oldValue);
+    };
+    ChangeListener<String> forceLongListener = (observable, oldValue, newValue) -> {
+        if (!newValue.matches("|[-\\+]?|[-\\+]?\\d+\\.?|[-\\+]?\\d+\\.?\\d+"))
+            ((StringProperty) observable).set(oldValue);
+    };
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        createToolbar();
+        createToolBar();
         oppersonService = new OppersonService();
         limit = new SimpleIntegerProperty(25);
         totalCount = new SimpleIntegerProperty(1);
@@ -118,6 +129,26 @@ public class ${className}Controller implements Initializable {
 
         <#list table.columns as column>
         ${column.columnNameLower}.setCellValueFactory(new PropertyValueFactory<${className}, ${column.javaType}>("${column.columnNameLower}"));
+        </#list>
+
+        <#list table.columns as column>
+            <#if !column.pk && column.columnNameLower!="version"
+                            && column.columnNameLower!="supplierCode"
+                            && column.columnNameLower!="unitCode"
+                            && column.columnNameLower!="tareUnitCode"
+                            && column.columnNameLower!="warehouseCode"
+                            && column.columnNameLower!="masterId"
+                            && column.columnNameLower!="creatorId"
+                            && column.columnNameLower!="updateTime"
+                            && column.columnNameLower!="updator"
+                            && column.columnNameLower!="updatorId"
+                            >
+                <#if column.javaType=="Integer">
+        ${column.columnNameLower}Text.textProperty().addListener(forceIntegerListener);
+                <#elseif column.javaType=="Long">
+        ${column.columnNameLower}Text.textProperty().addListener(forceLongListener);
+                </#if>
+            </#if>
         </#list>
 
         totalCount.addListener(new ChangeListener<Number>() {
@@ -143,7 +174,12 @@ public class ${className}Controller implements Initializable {
             saveBtn.setDisable(false);
             this.${classNameLower} = new ${className}();
             clearForm();
-            Opperson person = oppersonService.getLocalPerson(CurrentUserSession.getInstance().getUserName());
+            Opperson person = null;
+            if (CurrentUserSession.getInstance() !=  null) {
+                person = CurrentUserSession.getInstance().getOpperson();
+            } else {
+                person = oppersonService.getLocalPerson(CurrentUserSession.getInstance().getUserName());
+            }
             ${classNameLower}.setCreateTime(new Date());
             ${classNameLower}.setCreatorId(person.getSid());
             ${classNameLower}.setCreatorName(person.getSname());
@@ -177,18 +213,28 @@ public class ${className}Controller implements Initializable {
                                 && column.columnNameLower!="unitCode"
                                 && column.columnNameLower!="tareUnitCode"
                                 && column.columnNameLower!="warehouseCode"
+                                && column.columnNameLower!="masterId"
                                 && column.columnNameLower!="creatorId"
                                 && column.columnNameLower!="updateTime"
                                 && column.columnNameLower!="updator"
                                 && column.columnNameLower!="updatorId"
                                 >
                 <#if column.isDateTimeColumn>
-            // ${classNameLower}.set${column.columnName}(${column.columnNameLower}Text.getText());
+            if (${column.columnNameLower}Picker.getValue() != null) {
+                LocalDate localDate = productionDatePicker.getValue();
+                Date date = Date.from(localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+                ${classNameLower}.set${column.columnName}(date);
+            }
+                <#elseif column.javaType=="Long">
+            if (!${column.columnNameLower}Text.getText().trim().isEmpty()) {
+                ${classNameLower}.set${column.columnName}(Long.parseLong(${column.columnNameLower}Text.getText()));
+            }
                 <#else>
             ${classNameLower}.set${column.columnName}(${column.columnNameLower}Text.getText());
                 </#if>
                 </#if>
             </#list>
+
             ${classNameLower}.setUpdateTime(new Date());
 
             // inStorage.setBarCode(Config2.getBarCode());
@@ -212,12 +258,17 @@ public class ${className}Controller implements Initializable {
                             && column.columnNameLower!="unitCode"
                             && column.columnNameLower!="tareUnitCode"
                             && column.columnNameLower!="warehouseCode"
+                            && column.columnNameLower!="masterId"
                             && column.columnNameLower!="creatorId"
                             && column.columnNameLower!="updateTime"
                             && column.columnNameLower!="updator"
                             && column.columnNameLower!="updatorId"
                             >
+                <#if column.isDateTimeColumn>
+        ${column.columnNameLower}Picker.setValue(LocalDate.now());
+                <#else>
         ${column.columnNameLower}Text.setText("");
+                </#if>
             </#if>
         </#list>
     }
@@ -230,6 +281,7 @@ public class ${className}Controller implements Initializable {
                             && column.columnNameLower!="unitCode"
                             && column.columnNameLower!="tareUnitCode"
                             && column.columnNameLower!="warehouseCode"
+                            && column.columnNameLower!="masterId"
                             && column.columnNameLower!="creatorId"
                             && column.columnNameLower!="updateTime"
                             && column.columnNameLower!="updator"
@@ -303,12 +355,24 @@ public class ${className}Controller implements Initializable {
                             && column.columnNameLower!="unitCode"
                             && column.columnNameLower!="tareUnitCode"
                             && column.columnNameLower!="warehouseCode"
+                            && column.columnNameLower!="masterId"
                             && column.columnNameLower!="creatorId"
                             && column.columnNameLower!="updateTime"
                             && column.columnNameLower!="updator"
                             && column.columnNameLower!="updatorId"
                             >
+                <#if column.javaType=="Long">
+            ${column.columnNameLower}Text.setText(String.valueOf(${classNameLower}.get${column.columnName}()));
+                <#elseif  column.isDateTimeColumn>
+            if (${classNameLower}.get${column.columnName}() == null) {
+                ${column.columnNameLower}Picker.getEditor().clear();
+                ${column.columnNameLower}Picker.setValue(null);
+            } else {
+                ${column.columnNameLower}Picker.setValue(${classNameLower}.get${column.columnName}().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+            }
+                <#else>
             ${column.columnNameLower}Text.setText(${classNameLower}.get${column.columnName}());
+                </#if>
             </#if>
         </#list>
         }
@@ -339,7 +403,7 @@ public class ${className}Controller implements Initializable {
         });
     }
 
-    private void createToolbar() {
+    private void createToolBar() {
         addBtn = FontAwesomeIconFactory.get().createIconButton(FontAwesomeIcon.PLUS, "添加");
         addBtn.setPrefSize(150, 50);
         addBtn.setDefaultButton(true);
