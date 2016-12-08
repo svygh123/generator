@@ -267,7 +267,7 @@ public class ${className}Controller implements Initializable {
                 <#if column.isDateTimeColumn>
         ${column.columnNameLower}Picker.setValue(LocalDate.now());
                 <#else>
-        ${column.columnNameLower}Text.setText("");
+        ${column.columnNameLower}Text.clear();
                 </#if>
             </#if>
         </#list>
