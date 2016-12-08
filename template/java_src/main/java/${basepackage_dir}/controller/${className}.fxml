@@ -105,9 +105,17 @@
 										<#elseif count==1>
 								<Label text="${column.columnAlias}" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+3}" />
 											<#if column.isDateTimeColumn>
+												<#if column.columnNameLower=="createTime">
+								<DatePicker fx:id="${column.columnNameLower}Picker" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+4}" disable="true" />
+												<#else>
 								<DatePicker fx:id="${column.columnNameLower}Picker" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+4}" />
+												</#if>
 											<#else>
+												<#if column.columnNameLower=="creatorName">
+								<TextField fx:id="${column.columnNameLower}Text" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+4}" disable="true" />
+												<#else>
 								<TextField fx:id="${column.columnNameLower}Text" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+4}" />
+												</#if>
 											</#if>
 											<#assign count = 0>
 											<#assign rowIdx = rowIdx + 1>
