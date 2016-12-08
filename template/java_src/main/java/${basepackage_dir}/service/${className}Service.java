@@ -100,8 +100,8 @@ public class ${className}Service extends AbstractService {
     private String query(String sessionId, Object updateTime) {
         Action action = new Action();
         // 指定动作的process、activity和action，这里要注意登录的用户应该有执行这个功能中的这个动作的权限
-        action.setProcess("/ERP/mm/process/${classNameLower}/${classNameLower}Process");
-        action.setActivity("mainActivity");
+        action.setProcess("/ERP/common/process/BaseCode/baseCodeProcess");
+        action.setActivity("clientActivity");
         action.setName("sync${className}Action");
         action.setParameter("updateTime", updateTime);
 
@@ -125,8 +125,8 @@ public class ${className}Service extends AbstractService {
         try {
             Action action = new Action();
             // 指定动作的process、activity和action，这里要注意登录的用户应该有执行这个功能中的这个动作的权限
-            action.setProcess("/ERP/mm/process/${classNameLower}/${classNameLower}Process");
-            action.setActivity("mainActivity");
+            action.setProcess("/ERP/common/process/BaseCode/baseCodeProcess");
+            action.setActivity("clientActivity");
             action.setName("create${className}Action");
 
             <#list table.columns as column>
@@ -161,8 +161,8 @@ public class ${className}Service extends AbstractService {
         try {
             Action action = new Action();
             // 指定动作的process、activity和action，这里要注意登录的用户应该有执行这个功能中的这个动作的权限
-            action.setProcess("/ERP/mm/process/${classNameLower}/${classNameLower}Process");
-            action.setActivity("mainActivity");
+            action.setProcess("/ERP/common/process/BaseCode/baseCodeProcess");
+            action.setActivity("clientActivity");
             action.setName("update${className}Action");
 
             <#list table.columns as column>
