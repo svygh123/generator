@@ -227,6 +227,7 @@ public class ${className}Service extends AbstractService {
             <#list table.columns as column>
             vars.put("${column.columnNameLower}", ${column.columnNameLower});
             </#list>
+
             String ksql = "INSERT INTO ${table.sqlName} id (<#list table.columns as column><#if column.pk>id,<#else>id.${column.columnNameLower}<#if column_has_next>,</#if></#if></#list>) " +
                     " VALUES(<#list table.columns as column>:${column.columnNameLower}<#if column_has_next>,</#if></#list>)";
             KSQL.executeUpdate(ksql, vars, mmDataModel, null);
@@ -241,6 +242,21 @@ public class ${className}Service extends AbstractService {
         }
         return result;
     }
+
+    ${className} ${classNameLower} = new ${className}();
+    <#list table.columns as column>
+       ${classNameLower}.set${column.columnName}(bean.get${column.columnName}());
+    </#list>
+
+    // hibernate 中insert into ... values ... 语法不支持
+    String sql = "insert into ${table.sqlName} s (<#list table.columns as column>s.${column.columnNameLower}<#if column_has_next>,</#if></#list>) " +
+            " values(<#list table.columns as column>:${column.columnNameLower}<#if column_has_next>,</#if></#list>)";
+    dao.createQuery(sql)
+       <#list table.columns as column>
+       .setParameter("${column.columnNameLower}", bean.get${column.columnName}())
+       </#list>
+       .executeUpdate();
+
 
      */
 
