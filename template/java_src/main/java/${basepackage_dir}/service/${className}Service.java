@@ -130,7 +130,7 @@ public class ${className}Service extends AbstractService {
 
             <#list table.columns as column>
                 <#if column.isDateTimeColumn>
-            action.setParameter("${column.columnNameLower}", bean.get${column.columnName}()!=null?new Timestamp(bean.get${column.columnName}().getTime()));
+            action.setParameter("${column.columnNameLower}", bean.get${column.columnName}()!=null?new Timestamp(bean.get${column.columnName}().getTime()):null);
                 <#elseif column.javaType=="Long">
             action.setParameter("${column.columnNameLower}", bean.get${column.columnName}()!=null?new BigDecimal(bean.get${column.columnName}()):null);
                 <#else>
@@ -167,7 +167,7 @@ public class ${className}Service extends AbstractService {
 
             <#list table.columns as column>
                 <#if column.isDateTimeColumn>
-            action.setParameter("${column.columnNameLower}", new Timestamp(bean.get${column.columnName}().getTime()));
+            action.setParameter("${column.columnNameLower}", bean.get${column.columnName}()!=null?new Timestamp(bean.get${column.columnName}().getTime()):null);
                 <#elseif column.javaType=="Long">
             action.setParameter("${column.columnNameLower}", bean.get${column.columnName}()!=null?new BigDecimal(bean.get${column.columnName}()):null);
                 <#else>
@@ -256,6 +256,55 @@ public class ${className}Service extends AbstractService {
        .setParameter("${column.columnNameLower}", bean.get${column.columnName}())
        </#list>
        .executeUpdate();
+
+
+    <action name="update${className}Action" global="false" procedure="update${className}Procedure">
+        <label language="zh_CN">${table.tableAlias}</label>
+        <#list table.columns as column>
+            <#if column.isDateTimeColumn>
+        <public name="${column.columnNameLower}" type="DateTime"></public>
+            <#elseif column.javaType=="Long">
+        <public name="${column.columnNameLower}" type="Decimal"></public>
+            <#else>
+        <public name="${column.columnNameLower}" type="${column.javaType}"></public>
+            </#if>
+        </#list>
+    </action>
+
+    <procedure name="update${className}Procedure" code-model="/ERP/common/logic/code" code="Client.update${className}">
+        <#list table.columns as column>
+            <#if column.isDateTimeColumn>
+        <parameter name="${column.columnNameLower}" type="DateTime"></parameter>
+            <#elseif column.javaType=="Long">
+        <parameter name="${column.columnNameLower}" type="Decimal"></parameter>
+            <#else>
+        <parameter name="${column.columnNameLower}" type="${column.javaType}"></parameter>
+            </#if>
+        </#list>
+    </procedure>
+
+    public static Map<String, Object> update${className}(<#list table.columns as column><#if column.isDateTimeColumn>Timestamp ${column.columnNameLower}<#if column_has_next>,</#if><#elseif column.javaType=="Long">BigDecimal ${column.columnNameLower}<#if column_has_next>,</#if><#else>${column.javaType} ${column.columnNameLower}<#if column_has_next>,</#if></#if></#list>) {
+        Map<String, Object> result = new HashMap<String, Object>();
+        try {
+            HashMap<String,Object> vars = new HashMap<String,Object>();
+            <#list table.columns as column>
+            vars.put("${column.columnNameLower}", ${column.columnNameLower});
+            </#list>
+
+            String ksql = "UPDATE ${table.sqlName} id SET <#list table.columns as column><#if !column.pk>id.${column.columnNameLower}=:${column.columnNameLower}<#if column_has_next>,</#if></#if></#list> " +
+                    " WHERE id=:id";
+            KSQL.executeUpdate(ksql, vars, mmDataModel, null);
+
+            result.put("flag", true);
+            result.put("msg", "");
+            result.put("result", "");
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("flag", false);
+            result.put("msg", e.getMessage());
+        }
+        return result;
+    }
 
 
      */
