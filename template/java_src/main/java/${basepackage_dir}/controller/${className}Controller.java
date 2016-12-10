@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import com.isoftoon.fx.dialog.Dialog;
 import com.isoftoon.ld.fx.config.CurrentUserSession;
-import com.isoftoon.ld.fx.model.InStock;
+import com.isoftoon.ld.fx.model.${className};
 import com.isoftoon.ld.fx.model.Opperson;
 import com.isoftoon.ld.fx.service.${className}Service;
 import com.isoftoon.ld.fx.service.OppersonService;
