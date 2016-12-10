@@ -40,7 +40,7 @@ public class ${className}Service extends AbstractService {
     }
 
     public Page<${className}> findByPage(PageRequest<${className}> pageRequest) {
-        Page<${className}> list = dao.find(pageRequest, "select t from ${className} t", new ArrayList<>().toArray());
+        Page<${className}> list = dao.find(pageRequest, "select t from ${className} t order by t.createTime desc", new ArrayList<>().toArray());
         return list;
     }
 
