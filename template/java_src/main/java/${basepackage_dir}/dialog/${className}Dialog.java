@@ -171,7 +171,7 @@ public class ${className}Dialog extends Stage implements Initializable {
 	    close();
 	}
 	// <Button fx:id="select${className}Button" defaultButton="true" mnemonicParsing="false" prefHeight="30.0" text="选择" GridPane.columnIndex="2" />
-	// @FXML private Button selectMaterialButton;
+	// @FXML private Button select${className}Button;
 	/*
 	 <#assign bean="outStock">
 	select${className}Button.setOnAction(event -> {
