@@ -7,6 +7,7 @@ package com.isoftoon.ld.fx.dialog;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,8 @@ import com.isoftoon.ld.fx.model.${className};
 import com.isoftoon.ld.fx.service.${className}Service;
 import com.isoftoon.orm.Page;
 import com.isoftoon.orm.PageRequest;
+import com.isoftoon.utils.Constants;
+import com.isoftoon.utils.DateConvertUtils;
 
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -170,6 +173,7 @@ public class ${className}Dialog extends Stage implements Initializable {
 	// <Button fx:id="select${className}Button" defaultButton="true" mnemonicParsing="false" prefHeight="30.0" text="选择" GridPane.columnIndex="2" />
 	// @FXML private Button selectMaterialButton;
 	/*
+	 <#assign bean="outStock">
 	select${className}Button.setOnAction(event -> {
         ${className}Dialog dlg = new ${className}Dialog(new Callback<${className},${className}>(){
         @Override
@@ -177,9 +181,49 @@ public class ${className}Dialog extends Stage implements Initializable {
             if (param instanceof ${className}) {
                 ${className} ${classNameLower} = param;
 
-                inStock.setMaterialCode(${classNameLower}.getCode());
+                <#list table.columns as column>
+                    <#if column.pk>
+                ${bean}.set${column.columnName}(UUID.randomUUID().toString());
+                    <#else>
+                ${bean}.set${column.columnName}(${classNameLower}.get${column.columnName}());
+                    </#if>
+                </#list>
 
-                materialCodeText.setText(${classNameLower}.getCode());
+                <#list table.columns as column>
+                    <#if column.pk  || column.columnNameLower=="version"
+                                    || column.columnNameLower=="supplierCode"
+                                    || column.columnNameLower=="unitCode"
+                                    || column.columnNameLower=="tareUnitCode"
+                                    || column.columnNameLower=="warehouseCode"
+                                    || column.columnNameLower=="masterId"
+                                    || column.columnNameLower=="creatorId"
+                                    || column.columnNameLower=="updateTime"
+                                    || column.columnNameLower=="updator"
+                                    || column.columnNameLower=="updatorId"
+                                    >
+                    <#else>
+                        <#if column.javaType=="Long">
+                ${column.columnNameLower}Text.setText(String.valueOf(${classNameLower}.get${column.columnName}()));
+                        <#elseif column.isDateTimeColumn>
+                            <#if column.columnNameLower=="createTime" || column.columnNameLower=="markTime">
+                if (${classNameLower}.get${column.columnName}() != null) {
+                    ${column.columnNameLower}Text.setText(DateConvertUtils.format(${classNameLower}.get${column.columnName}(), Constants.DATETIME_FORMAT));
+                } else {
+                    ${column.columnNameLower}Text.clear();
+                }
+                            <#else>
+                if (${classNameLower}.get${column.columnName}() == null) {
+                    ${column.columnNameLower}Picker.getEditor().clear();
+                    ${column.columnNameLower}Picker.setValue(null);
+                } else {
+                    ${column.columnNameLower}Picker.setValue(${classNameLower}.get${column.columnName}().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+                }
+                            </#if>
+                        <#else>
+                ${column.columnNameLower}Text.setText(${classNameLower}.get${column.columnName}());
+                        </#if>
+                    </#if>
+                </#list>
             }
             return param;
         }});
