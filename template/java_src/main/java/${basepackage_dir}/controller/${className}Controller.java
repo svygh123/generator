@@ -135,7 +135,7 @@ public class ${className}Controller implements Initializable {
         ${column.columnNameLower}.setCellValueFactory(cellData -> {
             SimpleObjectProperty property = new SimpleObjectProperty();
             if (cellData.getValue().get${column.columnName}() != null) {
-                property.setValue(DateConvertUtils.format(cellData.getValue().get${column.columnName}(),Constants.DATE_FORMAT));
+                property.setValue(DateConvertUtils.format(cellData.getValue().get${column.columnName}(),Constants.DATETIME_FORMAT));
             }
             return property;
         });
