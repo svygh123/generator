@@ -84,7 +84,17 @@ public class ${className}Dialog extends Stage implements Initializable {
         totalCount = new SimpleIntegerProperty(1);
 
         <#list table.columns as column>
+            <#if column.isDateTimeColumn>
+        ${column.columnNameLower}.setCellValueFactory(cellData -> {
+            SimpleObjectProperty property = new SimpleObjectProperty();
+            if (cellData.getValue().get${column.columnName}() != null) {
+                property.setValue(DateConvertUtils.format(cellData.getValue().get${column.columnName}(),Constants.DATETIME_FORMAT));
+            }
+            return property;
+        });
+            <#else>
         ${column.columnNameLower}.setCellValueFactory(new PropertyValueFactory<${className}, ${column.javaType}>("${column.columnNameLower}"));
+            </#if>
         </#list>
 
         totalCount.addListener(new ChangeListener<Number>() {
@@ -173,7 +183,7 @@ public class ${className}Dialog extends Stage implements Initializable {
 	// <Button fx:id="select${className}Button" defaultButton="true" mnemonicParsing="false" prefHeight="30.0" text="选择" GridPane.columnIndex="2" />
 	// @FXML private Button select${className}Button;
 	/*
-	 <#assign bean="outStock">
+	 <#assign bean="backStock">
 	select${className}Button.setOnAction(event -> {
         ${className}Dialog dlg = new ${className}Dialog(new Callback<${className},${className}>(){
         @Override
