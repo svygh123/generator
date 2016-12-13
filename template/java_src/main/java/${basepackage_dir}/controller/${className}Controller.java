@@ -24,12 +24,15 @@ import com.isoftoon.ld.fx.service.${className}Service;
 import com.isoftoon.ld.fx.service.OppersonService;
 import com.isoftoon.orm.Page;
 import com.isoftoon.orm.PageRequest;
+import com.isoftoon.utils.Constants;
+import com.isoftoon.utils.DateConvertUtils;
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import de.jensd.fx.glyphs.fontawesome.utils.FontAwesomeIconFactory;
 import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -128,7 +131,17 @@ public class ${className}Controller implements Initializable {
         progressIndicator.setMaxSize(100, 100);
 
         <#list table.columns as column>
+            <#if column.isDateTimeColumn>
+        ${column.columnNameLower}.setCellValueFactory(cellData -> {
+            SimpleObjectProperty property = new SimpleObjectProperty();
+            if (cellData.getValue().get${column.columnName}() != null) {
+                property.setValue(DateConvertUtils.format(cellData.getValue().get${column.columnName}(),Constants.DATE_FORMAT));
+            }
+            return property;
+        });
+            <#else>
         ${column.columnNameLower}.setCellValueFactory(new PropertyValueFactory<${className}, ${column.javaType}>("${column.columnNameLower}"));
+            </#if>
         </#list>
 
         <#list table.columns as column>
