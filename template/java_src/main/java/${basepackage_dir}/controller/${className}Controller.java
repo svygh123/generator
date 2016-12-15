@@ -234,7 +234,7 @@ public class ${className}Controller implements Initializable {
                                 >
                 <#if column.isDateTimeColumn>
             if (${column.columnNameLower}Picker.getValue() != null) {
-                LocalDate localDate = productionDatePicker.getValue();
+                LocalDate localDate = ${column.columnNameLower}Picker.getValue();
                 Date date = Date.from(localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
                 ${classNameLower}.set${column.columnName}(date);
             }
