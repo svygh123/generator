@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<#include "/flex_macro.include"/>
+<#assign className = table.className>   
+<#assign classNameFirstLower = className?uncap_first>
+<#assign underscoreName = table.underscoreName/>
+<#assign classNameLowerCase = className?lower_case/>
+<!-- xmlns:dropDown="com.risinda.erp.component.dropDown.*" -->
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:df="com.risinda.erp.component.datefield.*"
+		 width="100%" height="100%"
+		 variableRowHeight="true">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		
+		<@generateValidator/>
+		
+		<#-- 生成Validator -->
+		<#macro generateValidator>
+		<#list table.columns as column>
+		<#if !column.pk 
+		   && column.columnNameLower!="createTime" && column.columnNameLower!="updateTime"
+		   && column.columnNameLower!="creatorCode" && column.columnNameLower!="creator"
+		   && column.columnNameLower!="updatorCode" && column.columnNameLower!="updator"
+		   && column.columnNameLower!="deptCode" && column.columnNameLower!="deptName" 
+		   && column.columnNameLower!="orgCode" && column.columnNameLower!="orgName"
+		   && column.columnNameLower!="pstCode" && column.columnNameLower!="pstName"
+		   && column.columnNameLower!="flowState" && column.columnNameLower!="state"
+		   && column.columnNameLower!="type" && column.columnNameLower!="delFlag">
+		<#if column.isDateTimeColumn>
+		<mx:DateValidator id="${column.columnNameLower}Vld" source="{${column.columnNameLower}Inp}" required="false" property="text" allowedFormatChars="-" inputFormat="{${className}Base.FORMAT_${column.constantName}}"/>
+		<#elseif column.isNumberColumn>
+		<mx:NumberValidator id="${column.columnNameLower}Vld" source="{${column.columnNameLower}Inp}" required="false" property="text"/>
+		<#else>
+		<mx:StringValidator id="${column.columnNameLower}Vld" source="{${column.columnNameLower}Inp}" required="false" property="text"/>
+		</#if>
+		</#if>
+		</#list>
+		</#macro>
+		
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.mcit.framework.util.NumberConvertUtils;
+			import com.mcit.framework.util.DateConvertUtils;
+			import com.mcit.framework.util.ValidatorUtils;
+			import com.risinda.erp.common.utils.Constants;
+			import ${basepackage}.model.*;
+			
+			[Bindable] public var ${classNameFirstLower} : ${className};
+			[Bindable] public var editable : Boolean = true; // 控件是否可编辑
+			[Bindable] public var titleValue : String = "${table.tableAlias}"; // 表单标题
+			
+			public function initConfigDropDownComponent() : void {
+				// settleAccountsWayDd.setDropDownIndex();
+			}
+			
+			public function validate() : Boolean {
+				return ValidatorUtils.validateAll([
+					<#list table.columns as column>
+						<#if !column.pk  
+						   && column.columnNameLower!="createTime" && column.columnNameLower!="updateTime"
+						   && column.columnNameLower!="creatorCode" && column.columnNameLower!="creator"
+						   && column.columnNameLower!="updatorCode" && column.columnNameLower!="updator"
+						   && column.columnNameLower!="deptCode" && column.columnNameLower!="deptName" 
+						   && column.columnNameLower!="orgCode" && column.columnNameLower!="orgName"
+						   && column.columnNameLower!="pstCode" && column.columnNameLower!="pstName"
+						   && column.columnNameLower!="flowState" && column.columnNameLower!="state"
+						   && column.columnNameLower!="type" && column.columnNameLower!="delFlag">
+					${column.columnNameLower}Vld<#if column_has_next>,</#if>
+					</#if>
+				</#list>
+				]);
+			}
+		]]>
+	</fx:Script>
+	<mx:Grid width="100%" horizontalCenter="0">
+		<mx:GridRow width="100%" height="25">
+			<mx:GridItem width="100" height="100%" colSpan="${fieldNumPerRow*2}" paddingLeft="2">
+				<s:Label width="100%" height="100%"
+					     fontSize="18" fontWeight="bold"
+					     textAlign="center" verticalAlign="middle"
+					     text="{titleValue}" />
+			</mx:GridItem>
+		</mx:GridRow>
+		<mx:GridRow width="100%" height="25">
+		<#assign x = 1>
+		<#list table.notPkColumns as column>
+			<#if column.columnNameLower!="createTime" && column.columnNameLower!="updateTime"
+			  && column.columnNameLower!="creatorCode" && column.columnNameLower!="creator"
+			  && column.columnNameLower!="updatorCode" && column.columnNameLower!="updator"
+			  && column.columnNameLower!="deptCode" && column.columnNameLower!="deptName" 
+			  && column.columnNameLower!="orgCode" && column.columnNameLower!="orgName"
+			  && column.columnNameLower!="pstCode" && column.columnNameLower!="pstName"
+			  && column.columnNameLower!="flowState" && column.columnNameLower!="state"
+			  && column.columnNameLower!="type" && column.columnNameLower!="delFlag">
+		<#if ( x != (fieldNumPerRow + 1) )>
+			<#assign x = x + 1>
+		<#else>
+		</mx:GridRow>
+		<mx:GridRow width="100%" height="25">
+			<#assign x = 2>
+		</#if>
+			<mx:GridItem width="100" height="100%" backgroundColor="#C6D9F1" paddingLeft="2">
+				<s:Label text="<@getMxmlColumnLabel column/>" verticalAlign="middle" width="100%" height="100%" />
+			</mx:GridItem>
+			<mx:GridItem width="100%" height="100%">
+				<#if column.isDateTimeColumn>
+				<df:DateField id="${column.columnNameLower}Inp" selectedDate="@{${classNameFirstLower}.${column.columnNameLower}}" formatString="{${className}Base.FORMAT_${column.constantName}}" editable="false" yearNavigationEnabled="true" textInputStyleName="TextInput" disabledColor="{Constants.DATE_DISABLED_TEXT_COLOR}" enabled="{editable}" width="100%" height="100%" />
+				<#elseif column.isNumberColumn>
+				<s:TextInput id="${column.columnNameLower}Inp" text="{NumberConvertUtils.format(${classNameFirstLower}.${column.columnNameLower})}" change="this.${classNameFirstLower}.${column.columnNameLower}=NumberConvertUtils.toNumber(${column.columnNameLower}Inp.text);" borderVisible="false" editable="{editable}" width="100%" height="100%" />
+				<#else>
+				<s:TextInput id="${column.columnNameLower}Inp" text="@{${classNameFirstLower}.${column.columnNameLower}}" borderVisible="false" editable="{editable}" width="100%" height="100%" />
+				</#if>
+			</mx:GridItem>
+			</#if>
+		</#list>
+		</mx:GridRow>
+		<mx:GridRow width="100%" height="25">
+			<mx:GridItem width="100" height="100%" colSpan="${fieldNumPerRow*2}" paddingLeft="2">
+				<s:Label text="填报人信息" verticalAlign="middle" width="100%" height="100%" fontWeight="bold" />
+			</mx:GridItem>
+		</mx:GridRow>
+		<mx:GridRow width="100%" height="25">
+			<mx:GridItem width="100" height="100%" backgroundColor="#C6D9F1" paddingLeft="2">
+				<s:Label text="{${className}Base.ALIAS_ORG_NAME}" verticalAlign="middle" width="100%" height="100%" />
+			</mx:GridItem>
+			<mx:GridItem width="100%" height="100%">
+				<s:TextInput id="orgNameInp" text="{${classNameFirstLower}.orgName}" editable="false" borderVisible="false" width="100%" height="100%" />
+			</mx:GridItem>
+			<mx:GridItem width="100" height="100%" backgroundColor="#C6D9F1" paddingLeft="2">
+				<s:Label text="{${className}Base.ALIAS_DEPT_NAME}" verticalAlign="middle" width="100%" height="100%" />
+			</mx:GridItem>
+			<mx:GridItem width="100%" height="100%">
+				<s:TextInput id="deptNameInp" text="{${classNameFirstLower}.deptName}" editable="false" borderVisible="false" width="100%" height="100%" />
+			</mx:GridItem>
+		</mx:GridRow>
+		<mx:GridRow width="100%" height="25">
+			<mx:GridItem width="100" height="100%" backgroundColor="#C6D9F1" paddingLeft="2">
+				<s:Label text="{${className}Base.ALIAS_CREATOR}" verticalAlign="middle" width="100%" height="100%" />
+			</mx:GridItem>
+			<mx:GridItem width="100%" height="100%">
+				<s:TextInput id="creatorInp" text="{${classNameFirstLower}.creator}" editable="false" borderVisible="false" width="100%" height="100%" />
+			</mx:GridItem>
+			<mx:GridItem width="100" height="100%" backgroundColor="#C6D9F1" paddingLeft="2">
+				<s:Label text="{${className}Base.ALIAS_CREATE_TIME}" verticalAlign="middle" width="100%" height="100%" />
+			</mx:GridItem>
+			<mx:GridItem width="100%" height="100%">
+				<s:TextInput id="createTimeInp" text="{DateConvertUtils.format(${classNameFirstLower}.createTime,${className}Base.FORMAT_CREATE_TIME)}" editable="false" borderVisible="false" width="100%" height="100%" />
+			</mx:GridItem>
+		</mx:GridRow>
+	</mx:Grid>
+</s:VGroup>

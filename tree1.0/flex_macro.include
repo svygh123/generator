@@ -1,0 +1,12 @@
+<#assign useI18N = false>
+
+<#macro getMxmlColumnLabel column>
+<#compress>
+	<#if useI18N>
+		@Resource(bundle='${className}',key='${column.columnNameFirstLower}')
+	<#else>
+		{${className}Base.ALIAS_${column.constantName}}
+	</#if>
+</#compress>
+</#macro>
+<#assign fieldNumPerRow=2>

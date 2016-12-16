@@ -1,0 +1,15 @@
+
+1、树形单表模版全新修改(2015-3-20)
+   a.表结构参考:/sinan/java_src/main/java/com/risinda/erp/oa/achives/档案分类维护.mcit
+   b.AdvancedDataGrid字段宽度参考:/sinan/flex_src/com/risinda/erp/oa/achives/view/AchivesCategoryGrid.mxml
+
+2016-7-29
+1、修改{className}Manager.java里的findList方法没有使用{className}的地方
+2、修改{className}Module.mxml里的会导致生成错误的地方
+
+(2015-4-22)
+1、{className}Detail.mxml 修改标题字体大小
+2、{className}Module.mxml 修改VGroup和HGroup的间距
+   
+(2015-3-25)
+1、createTime 格式化到秒   

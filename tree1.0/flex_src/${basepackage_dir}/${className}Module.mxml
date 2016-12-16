@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<#include "/flex_macro.include"/>
+<#assign className = table.className>   
+<#assign classNameFirstLower = className?uncap_first>
+<#assign underscoreName = table.underscoreName/>
+<#assign classNameLowerCase = className?lower_case/>
+<jm:BaseModule xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:jm="com.jmax.controls.*"
+			   width="1000" height="100%"
+			   creationComplete="creationCompleteHandler(event)"
+			   xmlns:pagging="com.mcit.components.*"
+			   xmlns:mcit="com.mcit.component.messagebox.view.*"
+			   xmlns:view="${basepackage}.view.*"
+			   xmlns:components="com.risinda.erp.component.line.*">
+	<fx:Script>
+		<![CDATA[
+			import com.jmax.controls.MessageBox;
+			import com.mcit.framework.orm.PageRequest;
+			import com.mcit.framework.util.CollectionUtils;
+			import com.risinda.erp.common.utils.Common;
+			import ${basepackage}.model.${className};
+			import ${basepackage}.proxy.${className}Proxy;
+			import ${basepackage}.view.${className}DetailWindow;
+			import ${basepackage}.model.${className}Base;
+			import ${basepackage}.query.${className}Query;
+			
+			import com.mcit.framework.common.FrameWorkModel;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			// 与后台交互的代理类对象
+			private var ${classNameFirstLower}Proxy : ${className}Proxy = new ${className}Proxy();
+			[Bindable] public var ${classNameFirstLower}List : ArrayCollection;
+			
+			// 模块加载完成后，默认调用查询方法查询数据
+			protected function creationCompleteHandler(event : FlexEvent) : void {
+				search_clickHandler(null);
+			}
+			
+			// 新增根项
+			protected function addTop_clickHandler(event : MouseEvent) : void {
+				var win : ${className}DetailWindow = ${className}DetailWindow(PopUpManager.createPopUp(this, ${className}DetailWindow, true));
+				win.${classNameFirstLower} = new ${className}();
+				
+				win.${classNameFirstLower}.id = Common.getGuid();
+				
+				win.${classNameFirstLower}.serialNumber = ${classNameFirstLower}List.length + 1; // 序号
+				win.${classNameFirstLower}.code = Common.renewZero( (${classNameFirstLower}List.length+1)+"", 3); // 编码
+				win.${classNameFirstLower}.levels = 1; // 级次
+				win.${classNameFirstLower}.levelsCode = win.${classNameFirstLower}.code; // 根项级次码 = 编码
+				win.${classNameFirstLower}.parentId = "-1"; // 根项父Id
+				win.${classNameFirstLower}.fullId = "/" + win.${classNameFirstLower}.id; // Id全路径
+				
+				win.${classNameFirstLower}.createTime = new Date;
+				win.${classNameFirstLower}.creator = FrameWorkModel.getInstance().loginAccount.name;
+				win.${classNameFirstLower}.creatorCode = FrameWorkModel.getInstance().loginAccount.accountCode;
+				win.${classNameFirstLower}.orgCode = FrameWorkModel.getInstance().loginAccount.orgCode;
+				win.${classNameFirstLower}.orgName = FrameWorkModel.getInstance().loginAccount.orgName;
+				win.${classNameFirstLower}.deptCode = FrameWorkModel.getInstance().loginAccount.deptCode;
+				win.${classNameFirstLower}.deptName = FrameWorkModel.getInstance().loginAccount.deptName;
+				win.${classNameFirstLower}.pstCode = FrameWorkModel.getInstance().loginAccount.pstCode;
+				win.${classNameFirstLower}.pstName = FrameWorkModel.getInstance().loginAccount.pstName;
+				win.${classNameFirstLower}.state = 0;   // 停用
+				win.${classNameFirstLower}.delFlag = 0;
+				
+				win.callback = addRootCallback;
+			}
+			
+			// 新增根项:回调函数
+			public function addRootCallback(${classNameFirstLower} : ${className}) : void {
+				var saveResult : Function = function (resultEvt : ResultEvent) : void {
+					var ${classNameFirstLower} : ${className} = resultEvt.result as ${className};
+					
+					if (!CollectionUtils.updateListItemIfPropertyEqual(${classNameFirstLower}List, ${classNameFirstLower}, "id")) {
+						${classNameFirstLower}List.addItem(${classNameFirstLower});
+					}
+				}
+				
+				${classNameFirstLower}.fullName = "/" + ${classNameFirstLower}.name; // 名称全路径
+				${classNameFirstLower}Proxy.save(${classNameFirstLower}).setResultCallback(saveResult);
+			}
+						
+			// 新增子项
+			protected function addSub_clickHandler(event : MouseEvent) : void {
+				var win : ${className}DetailWindow = ${className}DetailWindow(PopUpManager.createPopUp(this, ${className}DetailWindow, true));
+				win.${classNameFirstLower} = new ${className}();
+				
+				win.${classNameFirstLower}.id = Common.getGuid();
+				
+				var parentItem : ${className} = ${classNameFirstLower}AdvGrid.selectedItem as ${className};
+				
+				// 序号 编码 
+				if (parentItem.children == null) {
+					win.${classNameFirstLower}.serialNumber = 1; // 序号
+					win.${classNameFirstLower}.code = Common.renewZero( "1", 3);
+				} else {
+					win.${classNameFirstLower}.serialNumber = parentItem.children.length + 1; // 序号
+					win.${classNameFirstLower}.code = Common.renewZero( (parentItem.children.length+1) + "", 3);
+				}
+				win.${classNameFirstLower}.levels = parentItem.levels + 1; // 级次
+				win.${classNameFirstLower}.levelsCode = parentItem.levelsCode + "." + win.${classNameFirstLower}.code; // 级次码  = 父级次码 .编码 
+				win.${classNameFirstLower}.parentId = parentItem.id;       // 父ID
+				win.${classNameFirstLower}.fullId = parentItem.fullId + "/" + win.${classNameFirstLower}.id; // Id全路径
+				
+				win.${classNameFirstLower}.createTime = new Date;
+				win.${classNameFirstLower}.creator = FrameWorkModel.getInstance().loginAccount.name;
+				win.${classNameFirstLower}.creatorCode = FrameWorkModel.getInstance().loginAccount.accountCode;
+				win.${classNameFirstLower}.orgCode = FrameWorkModel.getInstance().loginAccount.orgCode;
+				win.${classNameFirstLower}.orgName = FrameWorkModel.getInstance().loginAccount.orgName;
+				win.${classNameFirstLower}.deptCode = FrameWorkModel.getInstance().loginAccount.deptCode;
+				win.${classNameFirstLower}.deptName = FrameWorkModel.getInstance().loginAccount.deptName;
+				win.${classNameFirstLower}.pstCode = FrameWorkModel.getInstance().loginAccount.pstCode;
+				win.${classNameFirstLower}.pstName = FrameWorkModel.getInstance().loginAccount.pstName;
+				win.${classNameFirstLower}.state = 0;   // 停用
+				win.${classNameFirstLower}.delFlag = 0;
+				
+				win.callback = addChildCallback;
+			}
+			
+			// 新增子节点返回处理函数
+			public function addChildCallback(${classNameFirstLower} : ${className}) : void {
+				var item : ${className} = ${classNameFirstLower}AdvGrid.selectedItem as ${className};
+				
+				var saveResult : Function = function (resultEvt : ResultEvent) : void {
+					var ${classNameFirstLower} : ${className} = resultEvt.result as ${className};
+					
+					if (!CollectionUtils.updateListItemIfPropertyEqual(${classNameFirstLower}List, ${classNameFirstLower}, "id")) {	
+						if (item.children == null) {
+							item.children = new ArrayCollection();
+						}
+						${classNameFirstLower}.parent = item;
+						item.children.addItem(${classNameFirstLower});
+					}
+				}
+				
+				${classNameFirstLower}.fullName = item.fullName + "/" + ${classNameFirstLower}.name; // 名称全路径
+				${classNameFirstLower}Proxy.save(${classNameFirstLower}).setResultCallback(saveResult);
+			}
+			
+			// 删除项
+			protected function del_clickHandler(event : MouseEvent) : void {
+				var item : ${className} = ${classNameFirstLower}AdvGrid.selectedItem as ${className};
+				
+				var delResult : Function = function() : void {
+					if (item.parent != null) {
+						item.parent.children.removeItemAt(item.parent.children.getItemIndex(${classNameFirstLower}AdvGrid.selectedItem));
+					} else {
+						${classNameFirstLower}List.removeItemAt(${classNameFirstLower}List.getItemIndex(${classNameFirstLower}AdvGrid.selectedItem));
+					}
+				}
+				
+				${classNameFirstLower}Proxy.del(new Array(item.id)).setResultCallback(delResult);
+			}
+			
+			// 编辑节点
+			protected function edit_clickHandler(event : MouseEvent) : void {
+				var item : ${className} = ${classNameFirstLower}AdvGrid.selectedItem as ${className};
+				
+				var win : ${className}DetailWindow = ${className}DetailWindow(PopUpManager.createPopUp(this, ${className}DetailWindow, true));
+				win.${classNameFirstLower} = item;
+				win.currentState = "edit";
+				
+				win.callback = editCallback;
+			}
+			
+			// 编辑节点返回处理函数
+			protected function editCallback(${classNameFirstLower} : ${className}) : void {
+				var item : ${className} = ${classNameFirstLower}AdvGrid.selectedItem as ${className};
+				
+				if (item.levels == 1) {
+					${classNameFirstLower}.fullName = "/" + ${classNameFirstLower}.name; // 名称全路径
+				} else {
+					${classNameFirstLower}.fullName = item.parent.fullName + "/" + item.name; // 名称全路径
+				}
+				
+				var saveResult : Function = function (resultEvt : ResultEvent) : void {
+					var ${classNameFirstLower} : ${className} = resultEvt.result as ${className};
+					${classNameFirstLower}.parent = item.parent;
+					${classNameFirstLower}.children = item.children;
+					if (item.levels == 1) {
+						// 编辑根节点的更新
+						CollectionUtils.updateListItemIfPropertyEqual(${classNameFirstLower}List, ${classNameFirstLower}, "id");
+					} else {
+						// 编辑子节点的更新
+						CollectionUtils.updateListItemIfPropertyEqual(item.parent.children, ${classNameFirstLower}, "id");
+					}
+				}
+				
+				${classNameFirstLower}Proxy.save(${classNameFirstLower}).setResultCallback(saveResult);
+			}
+			
+			// 启用
+			protected function on_clickHandler(event : MouseEvent) : void {
+				MessageBox.confirm("确定要启用当前记录吗?", "系统提示", Alert.YES | Alert.NO, this, function(event : CloseEvent) : void {
+					if (event.detail == Alert.YES) {
+						var vo : ${className} = ${classNameFirstLower}AdvGrid.selectedItem as ${className};
+						vo.state = 1;
+						var saveReslult : Function = function(evt : ResultEvent) : void { }
+						${classNameFirstLower}Proxy.save(vo).setResultCallback(saveReslult);
+					}
+				});
+			}
+			
+			// 停用
+			protected function off_clickHandler(event : MouseEvent) : void {
+				MessageBox.confirm("确定要停用当前记录吗?", "系统提示", Alert.YES | Alert.NO, this, function(event : CloseEvent) : void {
+					if (event.detail == Alert.YES) {
+						var vo : ${className} = ${classNameFirstLower}AdvGrid.selectedItem as ${className};
+						vo.state = 0;
+						var saveReslult : Function = function(evt : ResultEvent) : void { }
+						${classNameFirstLower}Proxy.save(vo).setResultCallback(saveReslult);
+					}
+				});
+			}
+			
+			// 全部展开
+			protected function expandAll_clickHandler(event : MouseEvent) : void {
+				${classNameFirstLower}AdvGrid.displayItemsExpanded = true;
+				${classNameFirstLower}AdvGrid.expandAll();
+			}
+			
+			// 全部折叠
+			protected function collapseAll_clickHandler(event : MouseEvent) : void {
+				${classNameFirstLower}AdvGrid.displayItemsExpanded = false;
+				${classNameFirstLower}AdvGrid.collapseAll();
+			}
+			
+			// 查询
+			protected function search_clickHandler(event : MouseEvent) : void {
+				var ${classNameFirstLower}Query : ${className}Query = new ${className}Query();
+				${classNameFirstLower}Query.name = nameInp.text;
+				
+				${classNameFirstLower}Proxy.findTreeList(${classNameFirstLower}Query).setResultCallback(loadResult);			
+			}
+			
+			// 查询:回调函数
+			protected function loadResult(evt : ResultEvent) : void {
+				${classNameFirstLower}List = evt.result as ArrayCollection;
+			}
+		]]>
+	</fx:Script>
+	<fx:Style source="assets/css/Button.css" />
+	<fx:Style source="assets/css/style.css" />
+	<fx:Style source="com/mcit/components/NavigatorTabCSS.css"/>
+	<fx:Style source="assets/css/AdvancedDataGrid.css" />
+	<fx:Style source="assets/css/TitleWindow.css" />
+	<fx:Style source="assets/css/Grid.css" />
+	
+	<components:ShadeLine />
+	
+	<s:VGroup width="100%" height="100%" paddingTop="4" paddingRight="3" paddingBottom="3" paddingLeft="3" gap="3">
+		<s:HGroup width="100%" verticalAlign="middle" gap="3">
+			<s:Button id="addTop" label="新增根节点" click="addTop_clickHandler(event)" icon="@Embed('assets/images/action_add.png')" />	
+			<s:Button id="addSub" label="新增子节点" click="addSub_clickHandler(event)" enabled="{${classNameFirstLower}AdvGrid.selectedItem}" icon="@Embed('assets/images/maximize.png')" />
+			<s:Button id="edit"   label="修改" click="edit_clickHandler(event)" enabled="{${classNameFirstLower}AdvGrid.selectedItem &amp;&amp; ${classNameFirstLower}AdvGrid.selectedItem.state==0}" icon="@Embed('assets/images/reply.png')" />
+			<s:Button id="on"     label="启用" click="on_clickHandler(event)" enabled="{${classNameFirstLower}AdvGrid.selectedItem &amp;&amp; ${classNameFirstLower}AdvGrid.selectedItem.state==0}" icon="@Embed('assets/images/on.png')" />
+			<s:Button id="off"    label="停用" click="off_clickHandler(event)" enabled="{${classNameFirstLower}AdvGrid.selectedItem &amp;&amp; ${classNameFirstLower}AdvGrid.selectedItem.state==1}" icon="@Embed('assets/images/off.png')" />
+			<s:Button id="del"    label="删除" click="del_clickHandler(event)" enabled="{${classNameFirstLower}AdvGrid.selectedItem &amp;&amp; (!${classNameFirstLower}AdvGrid.selectedItem.children || ${classNameFirstLower}AdvGrid.selectedItem.children.length==0) &amp;&amp; ${classNameFirstLower}AdvGrid.selectedItem.state==0}" icon="@Embed('assets/images/remove.png')" />
+			<s:Button id="expandAll"   label="全部展开" click="expandAll_clickHandler(event)" enabled="{${classNameFirstLower}List &amp;&amp; ${classNameFirstLower}List.length>0}" icon="@Embed('assets/images/folder_open.png')" />
+			<s:Button id="collapseAll" label="全部折叠" click="collapseAll_clickHandler(event)" enabled="{${classNameFirstLower}List &amp;&amp; ${classNameFirstLower}List.length>0}" icon="@Embed('assets/images/folder.png')" />
+			<s:Spacer />
+			<s:TextInput id="nameInp" prompt="名称" styleName="TextInput2" width="150" />
+			<s:Button id="search" label="查询" click="search_clickHandler(event)" icon="@Embed('assets/images/search.png')"/>
+			<s:Button id="reset" label="重置" click="nameInp.text='';search_clickHandler(null);" icon="@Embed('assets/images/reset.png')" />
+		</s:HGroup>
+		<s:Scroller height="100%" width="100%">
+			<s:HGroup height="100%" width="100%">
+				<view:${className}Grid id="${classNameFirstLower}AdvGrid" 
+									   width="100%" height="100%"  
+									   doubleClickEnabled="true" 
+									   horizontalScrollPolicy="auto" 
+									   doubleClick="edit_clickHandler(event)"
+									   headerSeparatorSkin="mx.skins.halo.DataGridHeaderSeparator"
+									   headerHorizontalSeparatorSkin="mx.skins.halo.AdvancedDataGridHeaderHorizontalSeparator"
+									   horizontalGridLines="true">
+					<view:dataProvider>
+						<mx:HierarchicalData source="{${classNameFirstLower}List}" childrenField="children" />
+					</view:dataProvider>
+				</view:${className}Grid>
+			</s:HGroup>
+		</s:Scroller>
+	</s:VGroup>	
+</jm:BaseModule>
