@@ -34,8 +34,8 @@ public class ${className}Service extends AbstractService {
         dao = new McitHibernateTemplate<${className}, String>(${className}.class);
     }
 
+    @SuppressWarnings("unchecked")
     public List<${className}> findAll() {
-        @SuppressWarnings("unchecked")
         List<${className}> list = dao.createQuery("from ${className}").list();
         return list;
     }
