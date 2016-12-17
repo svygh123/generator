@@ -1,0 +1,4 @@
+/target/
+/generator-output/
+/.settings/
+/src/main/java/com/isoft/generator/App.java
