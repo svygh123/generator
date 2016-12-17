@@ -60,7 +60,6 @@ import javafx.scene.layout.GridPane;
 
 public class ${className}Controller implements Initializable {
     static Logger logger = LoggerFactory.getLogger(${className}.class);
-    static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     @FXML AnchorPane rootAnchorPane;
     @FXML AnchorPane mainAnchorPane;
@@ -130,19 +129,7 @@ public class ${className}Controller implements Initializable {
 
         progressIndicator.setMaxSize(100, 100);
 
-        <#list table.columns as column>
-            <#if column.isDateTimeColumn>
-        ${column.columnNameLower}.setCellValueFactory(cellData -> {
-            SimpleObjectProperty property = new SimpleObjectProperty();
-            if (cellData.getValue().get${column.columnName}() != null) {
-                property.setValue(DateConvertUtils.format(cellData.getValue().get${column.columnName}(),Constants.DATETIME_FORMAT));
-            }
-            return property;
-        });
-            <#else>
-        ${column.columnNameLower}.setCellValueFactory(new PropertyValueFactory<${className}, ${column.javaType}>("${column.columnNameLower}"));
-            </#if>
-        </#list>
+        setupTable();
 
         <#list table.columns as column>
             <#if !column.pk && column.columnNameLower!="version"
@@ -216,7 +203,6 @@ public class ${className}Controller implements Initializable {
 
             if (${classNameLower}.getId() == null) {
                 ${classNameLower}.setId(UUID.randomUUID().toString());
-                // ${classNameLower}.setTagDatetime(sdf.format(new Date()));
                 ${classNameLower}.setVersion(0);
             }
 
@@ -437,4 +423,20 @@ public class ${className}Controller implements Initializable {
         detailToolBar.getItems().add(saveBtn);
         detailToolBar.getItems().add(printBtn);
      }
+
+    private void setupTable() {
+        <#list table.columns as column>
+            <#if column.isDateTimeColumn>
+        ${column.columnNameLower}.setCellValueFactory(cellData -> {
+            SimpleObjectProperty property = new SimpleObjectProperty();
+            if (cellData.getValue().get${column.columnName}() != null) {
+                property.setValue(DateConvertUtils.format(cellData.getValue().get${column.columnName}(),Constants.DATETIME_FORMAT));
+            }
+            return property;
+        });
+            <#else>
+        ${column.columnNameLower}.setCellValueFactory(new PropertyValueFactory<${className}, ${column.javaType}>("${column.columnNameLower}"));
+            </#if>
+        </#list>
+    }
 }
