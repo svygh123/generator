@@ -61,6 +61,10 @@ public class ${className}Service extends AbstractService {
         dao.save(model);
     }
 
+    public void saveList(List<${className}> ${classNameLower}s) throws IOException {
+        dao.saveList(${classNameLower}s);
+    }
+
     public void update(${className} model) throws IOException {
         dao.save(model);
     }
