@@ -79,15 +79,15 @@ public class ${className}Service extends AbstractService {
     }
 
     @Override
-    public Object excute(String sessionId, Object... parames) {
-        String action = (String) parames[0];
+    public Object excute(String sessionId, Object... params) {
+        String action = (String) params[0];
 
         if ("create".equals(action)) {
-            return create(sessionId, (${className}) parames[1]);
+            return create(sessionId, (${className}) params[1]);
         } else if ("query".equals(action)) {
-            return query(sessionId, parames[1]);
+            return query(sessionId, params[1]);
         } else if ("update".equals(action)) {
-            return update(sessionId, (${className}) parames[1]);
+            return update(sessionId, (${className}) params[1]);
         }
         return null;
     }
