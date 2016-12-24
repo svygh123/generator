@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -286,7 +287,7 @@ public class ${className}Controller implements Initializable {
                             && column.columnNameLower!="updator"
                             && column.columnNameLower!="updatorId"
                             >
-        if (${column.columnNameLower}Text.getText() == null || "".equals(${column.columnNameLower}Text.getText())) {
+        if (StringUtils.isNotBlank(${column.columnNameLower}Text.getText())) {
             Dialog.showError("提示", "${column.columnAlias}不能为空");
             return false;
         }
