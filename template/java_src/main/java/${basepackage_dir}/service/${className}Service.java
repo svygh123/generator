@@ -10,6 +10,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
@@ -25,6 +26,7 @@ import com.justep.biz.client.Action;
 import com.justep.biz.client.ActionEngine;
 import com.justep.biz.client.ActionResult;
 import com.justep.biz.client.ActionUtils;
+import com.justep.biz.client.data.impl.RowImpl;
 
 public class ${className}Service extends AbstractService {
     McitHibernateTemplate<${className}, String> dao = null;
@@ -198,6 +200,7 @@ public class ${className}Service extends AbstractService {
         }
         return null;
     }
+
     /*
 
     <action name="create${className}Action" global="false" procedure="create${className}Procedure">
@@ -253,8 +256,24 @@ public class ${className}Service extends AbstractService {
        ${classNameLower}.set${column.columnName}(bean.get${column.columnName}());
     </#list>
 
+    <#list table.columns as column><#if column.isDateTimeColumn>"${column.columnNameLower}","DateTime"<#elseif column.javaType=="Long">"${column.columnNameLower}","Decimal"<#else>"${column.columnNameLower}","${column.javaType}"</#if><#if column_has_next>,</#if></#list>
+
+    <#list table.columns as column><#if column.isDateTimeColumn>"${table.sqlName}.${column.columnNameLower}","DateTime"<#elseif column.javaType=="Long">"${table.sqlName}.${column.columnNameLower}","Decimal"<#else>"${table.sqlName}.${column.columnNameLower}","${column.javaType}"</#if><#if column_has_next>,</#if></#list>
+
+    while (it.hasNext()) {
+           Map<String, Object> r = it.next();
+           RowImpl row = table1.appendRow();
+           <#list table.columns as column>
+           row.setValue("${column.columnNameLower}", r.get("${column.columnNameLower}"));
+           </#list>
+
+           <#list table.columns as column>
+           row.setModifiedState("${column.columnNameLower}", false);
+           </#list>
+       }
+
     // hibernate 中insert into ... values ... 语法不支持
-    String sql = "insert into ${table.sqlName} s (<#list table.columns as column>s.${column.columnNameLower}<#if column_has_next>,</#if></#list>) " +
+    String sql = "insert into ${table.sqlName} s (<#list table.columns as column>s.${column.columnNameLower} as ${column.columnNameLower}<#if column_has_next>,</#if></#list>) " +
             " values(<#list table.columns as column>:${column.columnNameLower}<#if column_has_next>,</#if></#list>)";
     dao.createQuery(sql)
        <#list table.columns as column>
@@ -310,8 +329,6 @@ public class ${className}Service extends AbstractService {
         }
         return result;
     }
-
-
-     */
+    */
 
 }
