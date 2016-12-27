@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<#assign fieldNumPerRow=2>
+<#include "/macro.include"/>
+<#include "/java_copyright.include">
+<#assign className = table.className>
+<#assign classNameLower = className?uncap_first>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.text.*?>
+<?import java.lang.*?>
+<?import java.net.*?>
+<?import java.util.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.effect.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.paint.*?>
+
+<AnchorPane fx:id="rootAnchorPane" prefHeight="479.0" prefWidth="643.0" fx:controller="com.isoftoon.ld.fx.controller.${className}Controller" stylesheets="@table.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+	<children>
+		<SplitPane dividerPositions="0.3" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+			<items>
+				<AnchorPane fx:id="mainAnchorPane" prefWidth="500.0" AnchorPane.bottomAnchor="1.0" AnchorPane.leftAnchor="1.0" AnchorPane.rightAnchor="1.0" AnchorPane.topAnchor="1.0">
+					<children>
+						<ToolBar fx:id="mainToolBar" prefHeight="50.0" prefWidth="200.0" AnchorPane.leftAnchor="1.0" AnchorPane.rightAnchor="1.0" AnchorPane.topAnchor="0.0" />
+						<TableView fx:id="${classNameLower}Table" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="65.0" AnchorPane.leftAnchor="1.0" AnchorPane.rightAnchor="1.0" AnchorPane.topAnchor="60.0">
+							<columns>
+								<#list table.columns as column>
+									<#if column.pk  || column.columnNameLower=="version"
+													|| column.columnNameLower=="supplierCode"
+													|| column.columnNameLower=="unitCode"
+													|| column.columnNameLower=="tareUnitCode"
+													|| column.columnNameLower=="warehouseCode"
+													|| column.columnNameLower=="creatorId"
+													|| column.columnNameLower=="updateTime"
+													|| column.columnNameLower=="updator"
+													|| column.columnNameLower=="updatorId"
+													>
+								<TableColumn fx:id="${column.columnNameLower}" prefWidth="100.0" text="${column.columnAlias}" visible="false" />
+									<#else>
+								<TableColumn fx:id="${column.columnNameLower}" prefWidth="100.0" text="${column.columnAlias}" />
+									</#if>
+								</#list>
+							</columns>
+						</TableView>
+						<Pagination fx:id="pagination" prefHeight="40.0" prefWidth="200.0" AnchorPane.bottomAnchor="1.0" AnchorPane.leftAnchor="1.0" AnchorPane.rightAnchor="1.0" />
+					</children>
+				</AnchorPane>
+				<AnchorPane fx:id="detailAnchorPane" AnchorPane.bottomAnchor="1.0" AnchorPane.leftAnchor="1.0" AnchorPane.rightAnchor="1.0" AnchorPane.topAnchor="1.0">
+					<children>
+						<ToolBar fx:id="detailToolBar" prefHeight="50.0" prefWidth="200.0" AnchorPane.leftAnchor="1.0" AnchorPane.rightAnchor="1.0" AnchorPane.topAnchor="1.0" />
+						<GridPane fx:id="detailGridPane" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="65.0" styleClass="font18">
+							<columnConstraints>
+								<ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="150.0" />
+								<ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="200.0" />
+								<ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="80.0" />
+				                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="150.0" />
+				                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="200.0" />
+							</columnConstraints>
+							<rowConstraints>
+								<#assign rowCount = 1>
+								<#list table.columns as column>
+									<#if !column.pk && column.columnNameLower!="version"
+													&& column.columnNameLower!="supplierCode"
+													&& column.columnNameLower!="unitCode"
+													&& column.columnNameLower!="tareUnitCode"
+													&& column.columnNameLower!="warehouseCode"
+													&& column.columnNameLower!="creatorId"
+													&& column.columnNameLower!="updateTime"
+													&& column.columnNameLower!="updator"
+													&& column.columnNameLower!="updatorId"
+													>
+										<#if rowCount != fieldNumPerRow>
+											<#assign rowCount = rowCount + 1>
+										<#elseif rowCount==fieldNumPerRow>
+								<RowConstraints minHeight="10.0" prefHeight="40.0" vgrow="SOMETIMES" />
+											<#assign rowCount = 1>
+										</#if>
+									</#if>
+								</#list>
+							</rowConstraints>
+							<children>
+								<#assign rowIdx = 0>
+								<#assign colIdx = 0>
+								<#assign count = 0>
+								<#list table.columns as column>
+									<#if !column.pk && column.columnNameLower!="version"
+													&& column.columnNameLower!="supplierCode"
+													&& column.columnNameLower!="unitCode"
+													&& column.columnNameLower!="tareUnitCode"
+													&& column.columnNameLower!="warehouseCode"
+													&& column.columnNameLower!="creatorId"
+													&& column.columnNameLower!="updateTime"
+													&& column.columnNameLower!="updator"
+													&& column.columnNameLower!="updatorId"
+													>
+										<#if count != 1>
+								<Label text="${column.columnAlias}" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx}" />
+											<#if column.isDateTimeColumn>
+								<DatePicker fx:id="${column.columnNameLower}Picker" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+1}" />
+											<#else>
+								<TextField fx:id="${column.columnNameLower}Text" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+1}" />
+											</#if>
+										<#assign count = count + 1>
+										<#elseif count==1>
+								<Label text="${column.columnAlias}" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+3}" />
+											<#if column.isDateTimeColumn>
+												<#if column.columnNameLower=="createTime">
+								<DatePicker fx:id="${column.columnNameLower}Picker" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+4}" disable="true" />
+												<#else>
+								<DatePicker fx:id="${column.columnNameLower}Picker" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+4}" />
+												</#if>
+											<#else>
+												<#if column.columnNameLower=="creatorName">
+								<TextField fx:id="${column.columnNameLower}Text" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+4}" disable="true" />
+												<#else>
+								<TextField fx:id="${column.columnNameLower}Text" GridPane.rowIndex="${rowIdx}" GridPane.columnIndex="${colIdx+4}" />
+												</#if>
+											</#if>
+											<#assign count = 0>
+											<#assign rowIdx = rowIdx + 1>
+										</#if>
+									</#if>
+								</#list>
+							</children>
+						</GridPane>
+					</children>
+				</AnchorPane>
+			</items>
+		</SplitPane>
+	</children>
+</AnchorPane>
