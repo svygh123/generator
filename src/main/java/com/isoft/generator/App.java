@@ -11,8 +11,8 @@ public class App {
         g.getGenerator().addTemplateRootDir(templatePath);
         // g.getGenerator().setOutRootDir("C:\\download\\eclipse\\workspace\\generator\\generator-output");
         g.deleteOutRootDir();
-        //g.generateByTable("MM_Stock", "MM_InStock", "MM_OutStock", "MM_Material", "MM_Supplier"); // 可多表生成MM_InStock
-        g.generateByTable("PP_TaskList"); // 可多表生成MM_InStock
+        //g.generateByTable("MM_Stock", "MM_InStock", "MM_OutStock", "MM_Material", "MM_Supplier", "PP_TaskList"); // 多表生成
+        g.generateByTable("MM_PrepareMaterial"); // 可多表生成
         openDirectory("C:\\download\\eclipse\\workspace\\generator\\generator-output\\java_src\\main\\java\\com\\isoftoon\\ld\\fx");
     }
 
