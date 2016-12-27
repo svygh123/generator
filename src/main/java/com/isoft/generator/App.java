@@ -6,7 +6,7 @@ import cn.org.rapid_framework.generator.GeneratorFacade;
 
 public class App {
     public static void main(String[] args) throws Exception {
-        String templatePath = "C:\\download\\eclipse\\workspace\\generator\\template";
+        String templatePath = "C:\\download\\eclipse\\workspace\\generator\\templates\\simple\\form";
         GeneratorFacade g = new GeneratorFacade();
         g.getGenerator().addTemplateRootDir(templatePath);
         // g.getGenerator().setOutRootDir("C:\\download\\eclipse\\workspace\\generator\\generator-output");
