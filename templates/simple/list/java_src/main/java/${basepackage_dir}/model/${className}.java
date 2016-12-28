@@ -22,7 +22,7 @@ public class ${className} implements java.io.Serializable {
 	//date formats
 	<#list table.columns as column>
 	<#if column.isDateTimeColumn>
-	public static final String FORMAT_${column.constantName} = "yyyy-MM-dd hh:mm:ss";
+	public static final String FORMAT_${column.constantName} = "yyyy-MM-dd HH:mm:ss";
 	</#if>
 	</#list>
 
