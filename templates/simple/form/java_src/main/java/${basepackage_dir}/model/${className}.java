@@ -6,20 +6,32 @@ package ${basepackage}.model;
 
 import javax.persistence.*;
 
+<#list table.columns as column>
+    <#if column.javaType=="BigDecimal">
+import java.math.BigDecimal;
+<#break>
+    </#if>
+</#list>
+<#list table.columns as column>
+    <#if column.javaType=="Date">
+import java.util.Date;
 import com.isoftoon.utils.DateConvertUtils;
+<#break>
+    </#if>
+</#list>
 
 @Entity
 @Table(name = "${table.sqlName}")
 public class ${className} implements java.io.Serializable {
 	private static final long serialVersionUID = 5454155825314635342L;
 
-	//alias
+	// alias
 	public static final String TABLE_ALIAS = "${table.tableAlias}";
 	<#list table.columns as column>
 	public static final String ALIAS_${column.constantName} = "${column.columnAlias}";
 	</#list>
 
-	//date formats
+	// date formats
 	<#list table.columns as column>
 	<#if column.isDateTimeColumn>
 	public static final String FORMAT_${column.constantName} = "yyyy-MM-dd HH:mm:ss";
@@ -44,32 +56,36 @@ public class ${className} implements java.io.Serializable {
 		</#if>
 	</#list>
 <#else>
-	//可以直接使用: @Length(max=50,message="用户名长度不能大于50")显示错误消息
-	//columns START
+	// 可以直接使用: @Length(max=50,message="用户名长度不能大于50")显示错误消息
+	// columns START
 	<#list table.columns as column>
 	private ${column.javaType} ${column.columnNameLower};
 	</#list>
-	//columns END
+	// columns END
 </#if>
 
 </#macro>
 
 <#macro generatePkProperties>
 	<#if table.compositeId>
+
 	@EmbeddedId
 	public ${className}Id getId() {
 		return this.id;
 	}
+
 	public void setId(${className}Id id) {
 		this.id = id;
 	}
 	<#else>
 		<#list table.columns as column>
 			<#if column.pk>
+
 	@Id
     public ${column.javaType} get${column.columnName}() {
         return this.${column.columnNameLower};
     }
+
 	public void set${column.columnName}(${column.javaType} value) {
 		this.${column.columnNameLower} = value;
 	}
@@ -82,17 +98,31 @@ public class ${className} implements java.io.Serializable {
 	<#list table.columns as column>
 		<#if !column.pk>
 			<#if column.isDateTimeColumn>
+
 	@Transient
 	public String get${column.columnName}String() {
 		return DateConvertUtils.format(get${column.columnName}(), FORMAT_${column.constantName});
 	}
+
 	public void set${column.columnName}String(String value) {
 		set${column.columnName}(DateConvertUtils.parse(value, FORMAT_${column.constantName}));
 	}
 			</#if>
+	<#if column.javaType=="BigDecimal">
+
+	@Transient
+    public String get${column.columnName}String() {
+        return this.${column.columnNameLower} == null ? null : this.${column.columnNameLower}.stripTrailingZeros().toPlainString();
+    }
+	</#if>
+
+	<#if column.javaType=="BigDecimal">
+    @Column(name = "${column.sqlName}", precision = ${column.size}, scale = ${column.decimalDigits})
+    </#if>
 	public ${column.javaType} get${column.columnName}() {
 		return this.${column.columnNameLower};
 	}
+
 	public void set${column.columnName}(${column.javaType} value) {
 		this.${column.columnNameLower} = value;
 	}
@@ -142,4 +172,3 @@ public class ${className} implements java.io.Serializable {
 	}
 	</#list>
 </#macro>
-
