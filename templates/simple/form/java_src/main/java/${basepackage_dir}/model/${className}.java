@@ -59,8 +59,12 @@ public class ${className} implements java.io.Serializable {
 	// 可以直接使用: @Length(max=50,message="用户名长度不能大于50")显示错误消息
 	// columns START
 	<#list table.columns as column>
-	private ${column.javaType} ${column.columnNameLower};
-	</#list>
+        <#if column.javaType=="BigDecimal">
+    private ${column.javaType} ${column.columnNameLower} = BigDecimal.ZERO;
+        <#else>
+    private ${column.javaType} ${column.columnNameLower};
+        </#if>
+    </#list>
 	// columns END
 </#if>
 
@@ -112,7 +116,7 @@ public class ${className} implements java.io.Serializable {
 
 	@Transient
     public String get${column.columnName}String() {
-        return this.${column.columnNameLower} == null ? null : this.${column.columnNameLower}.stripTrailingZeros().toPlainString();
+        return this.${column.columnNameLower} == null || this.${column.columnNameLower}.equals(BigDecimal.ZERO) ? null : this.${column.columnNameLower}.stripTrailingZeros().toPlainString();
     }
 	</#if>
 
