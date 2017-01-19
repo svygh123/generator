@@ -10,6 +10,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
@@ -18,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.isoftoon.fx.dialog.Dialog;
+import com.isoftoon.ld.fx.animations.FadeInUpTransition;
 import com.isoftoon.ld.fx.config.CurrentUserSession;
 import com.isoftoon.ld.fx.model.${className};
 import com.isoftoon.ld.fx.model.Opperson;
@@ -31,6 +34,7 @@ import com.isoftoon.utils.DateConvertUtils;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import de.jensd.fx.glyphs.fontawesome.utils.FontAwesomeIconFactory;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -57,9 +61,10 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
+import javafx.util.Callback;
 import javafx.scene.layout.GridPane;
 
-public class ${className}Controller implements Initializable {
+public class ${className}Controller implements Initializable,Observer {
     static Logger logger = LoggerFactory.getLogger(${className}.class);
 
     @FXML AnchorPane rootAnchorPane;
@@ -97,8 +102,12 @@ public class ${className}Controller implements Initializable {
 
     private Button addBtn;
     private Button refreshBtn;
+    private Button mainPrintBtn;
     private Button printBtn;
+    private Button detailBtn;
+    private Button closeBtn;
     private Button saveBtn;
+    private Button backBtn;
 
     @FXML private ToolBar mainToolBar;
     @FXML private ToolBar detailToolBar;
@@ -111,15 +120,7 @@ public class ${className}Controller implements Initializable {
     private ObservableList<${className}> ${classNameLower}s = FXCollections.observableArrayList();
     private ${className}Service ${classNameLower}Service = new ${className}Service();
     private OppersonService oppersonService;
-
-    ChangeListener<String> forceIntegerListener = (observable, oldValue, newValue) -> {
-        if (!newValue.matches("\\d*"))
-            ((StringProperty) observable).set(oldValue);
-    };
-    ChangeListener<String> forceLongListener = (observable, oldValue, newValue) -> {
-        if (!newValue.matches("|[-\\+]?|[-\\+]?\\d+\\.?|[-\\+]?\\d+\\.?\\d+"))
-            ((StringProperty) observable).set(oldValue);
-    };
+    public Callback<Void, Void> callback;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -131,26 +132,6 @@ public class ${className}Controller implements Initializable {
         progressIndicator.setMaxSize(100, 100);
 
         setupTable();
-
-        <#list table.columns as column>
-            <#if !column.pk && column.columnNameLower!="version"
-                            && column.columnNameLower!="supplierCode"
-                            && column.columnNameLower!="unitCode"
-                            && column.columnNameLower!="tareUnitCode"
-                            && column.columnNameLower!="warehouseCode"
-                            && column.columnNameLower!="masterId"
-                            && column.columnNameLower!="creatorId"
-                            && column.columnNameLower!="updateTime"
-                            && column.columnNameLower!="updator"
-                            && column.columnNameLower!="updatorId"
-                            >
-                <#if column.javaType=="Integer">
-        ${column.columnNameLower}Text.textProperty().addListener(forceIntegerListener);
-                <#elseif column.javaType=="Long">
-        ${column.columnNameLower}Text.textProperty().addListener(forceLongListener);
-                </#if>
-            </#if>
-        </#list>
 
         totalCount.addListener(new ChangeListener<Number>() {
             @Override
@@ -172,129 +153,50 @@ public class ${className}Controller implements Initializable {
             }
         });
         addBtn.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent e) -> {
-            saveBtn.setDisable(false);
+            mainAnchorPane.setOpacity(0);
+            mainAnchorPane.toBack();
+            new FadeInUpTransition(mainAnchorPane).play();
+            mainAnchorPane.setVisible(false);
+            detailAnchorPane.setOpacity(1);
+            new FadeInUpTransition(detailAnchorPane).play();
+            detailAnchorPane.setVisible(true);
             this.${classNameLower} = new ${className}();
             clearForm();
-            Opperson person = null;
-            if (CurrentUserSession.getInstance() !=  null) {
-                person = CurrentUserSession.getInstance().getOpperson();
-            } else {
-                person = oppersonService.getLocalPerson(CurrentUserSession.getInstance().getUserName());
-            }
-            ${classNameLower}.setCreateTime(new Date());
-            ${classNameLower}.setCreatorId(person.getSid());
-            ${classNameLower}.setCreatorName(person.getSname());
-            ${classNameLower}.setUpdatorId(person.getSid());
-            ${classNameLower}.setUpdator(person.getSname());
-            // materialLabelText.setFocusTraversable(true);
-            Platform.runLater(new Runnable() {
-                  @Override
-                  public void run() {
-                      // materialLabelText.requestFocus();
-                  }
-            });
-            // 显示条码
-            // shewBarCodeDetail("");
         });
-        saveBtn.setDisable(true);
-        saveBtn.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent e) -> {
-            if (!validate()) {
-                return;
-            }
-
-            if (${classNameLower}.getId() == null) {
-                ${classNameLower}.setId(UUID.randomUUID().toString());
-                ${classNameLower}.setVersion(0);
-            }
-
-            <#list table.columns as column>
-                <#if !column.pk && column.columnNameLower!="version"
-                                && column.columnNameLower!="supplierCode"
-                                && column.columnNameLower!="unitCode"
-                                && column.columnNameLower!="tareUnitCode"
-                                && column.columnNameLower!="warehouseCode"
-                                && column.columnNameLower!="masterId"
-                                && column.columnNameLower!="creatorId"
-                                && column.columnNameLower!="updateTime"
-                                && column.columnNameLower!="updator"
-                                && column.columnNameLower!="updatorId"
-                                >
-                <#if column.isDateTimeColumn>
-            if (${column.columnNameLower}Picker.getValue() != null) {
-                LocalDate localDate = ${column.columnNameLower}Picker.getValue();
-                Date date = Date.from(localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
-                ${classNameLower}.set${column.columnName}(date);
-            }
-                <#elseif column.javaType=="Long">
-            if (!${column.columnNameLower}Text.getText().trim().isEmpty()) {
-                ${classNameLower}.set${column.columnName}(Long.parseLong(${column.columnNameLower}Text.getText()));
-            }
-                <#else>
-            ${classNameLower}.set${column.columnName}(${column.columnNameLower}Text.getText());
-                </#if>
-                </#if>
-            </#list>
-
-            ${classNameLower}.setUpdateTime(new Date());
-
-            // inStorage.setBarCode(Config2.getBarCode());
-            // shewBarCodeDetail(inStorage.getBarCode());
-            saveTask(${classNameLower});
+        detailBtn.disableProperty().bind(
+            Bindings.isNull(
+                ${classNameLower}Table.getSelectionModel().selectedItemProperty()
+            )
+        );
+        detailBtn.setOnAction(e -> {
+            mainAnchorPane.setOpacity(0);
+            new FadeInUpTransition(mainAnchorPane).play();
+            mainAnchorPane.setVisible(false);
+            detailAnchorPane.setOpacity(1);
+            new FadeInUpTransition(detailAnchorPane).play();
+            detailAnchorPane.setVisible(true);
         });
+        closeBtn.setOnAction(e -> {
+            callback.call(null);
+        });
+        printBtn.disableProperty().bind(
+            Bindings.isNull(
+                ${classNameLower}Table.getSelectionModel().selectedItemProperty()
+            )
+        );
+        mainPrintBtn.disableProperty().bind(
+            Bindings.isNull(
+                ${classNameLower}Table.getSelectionModel().selectedItemProperty()
+            )
+        );
         ${classNameLower}Table.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             saveBtn.setDisable(true);
-            show${className}Details(newValue);
+            tableSelectionChanged(newValue);
         });
 
         StackPane.setAlignment(pagination, Pos.CENTER);
         progressIndicator.setVisible(true);
         init();
-    }
-
-    private void clearForm() {
-        <#list table.columns as column>
-            <#if !column.pk && column.columnNameLower!="version"
-                            && column.columnNameLower!="supplierCode"
-                            && column.columnNameLower!="unitCode"
-                            && column.columnNameLower!="tareUnitCode"
-                            && column.columnNameLower!="warehouseCode"
-                            && column.columnNameLower!="masterId"
-                            && column.columnNameLower!="creatorId"
-                            && column.columnNameLower!="updateTime"
-                            && column.columnNameLower!="updator"
-                            && column.columnNameLower!="updatorId"
-                            >
-                <#if column.isDateTimeColumn>
-        ${column.columnNameLower}Picker.setValue(LocalDate.now());
-                <#else>
-        ${column.columnNameLower}Text.clear();
-                </#if>
-            </#if>
-        </#list>
-    }
-
-    private boolean validate() {
-        /*
-        <#list table.columns as column>
-            <#if !column.pk && column.columnNameLower!="version"
-                            && column.columnNameLower!="supplierCode"
-                            && column.columnNameLower!="unitCode"
-                            && column.columnNameLower!="tareUnitCode"
-                            && column.columnNameLower!="warehouseCode"
-                            && column.columnNameLower!="masterId"
-                            && column.columnNameLower!="creatorId"
-                            && column.columnNameLower!="updateTime"
-                            && column.columnNameLower!="updator"
-                            && column.columnNameLower!="updatorId"
-                            >
-        if (StringUtils.isNotBlank(${column.columnNameLower}Text.getText())) {
-            Dialog.showError("提示", "${column.columnAlias}不能为空");
-            return false;
-        }
-            </#if>
-        </#list>
-        */
-        return true;
     }
 
     public void init() {
@@ -346,10 +248,20 @@ public class ${className}Controller implements Initializable {
         });
     }
 
-    private void show${className}Details(${className} ${classNameLower}) {
-        this.${classNameLower} = ${classNameLower};
-        if (${classNameLower} != null) {
-            <#list table.columns as column>
+    private void clearForm() {
+        Opperson person = null;
+        if (CurrentUserSession.getInstance() !=  null) {
+            person = CurrentUserSession.getInstance().getOpperson();
+        } else {
+            person = oppersonService.getLocalPerson(CurrentUserSession.getInstance().getUserName());
+        }
+        ${classNameLower}.setCreateTime(new Date());
+        ${classNameLower}.setCreatorId(person.getSid());
+        ${classNameLower}.setCreatorName(person.getSname());
+        ${classNameLower}.setUpdatorId(person.getSid());
+        ${classNameLower}.setUpdator(person.getSname());
+
+        <#list table.columns as column>
             <#if !column.pk && column.columnNameLower!="version"
                             && column.columnNameLower!="supplierCode"
                             && column.columnNameLower!="unitCode"
@@ -361,21 +273,17 @@ public class ${className}Controller implements Initializable {
                             && column.columnNameLower!="updator"
                             && column.columnNameLower!="updatorId"
                             >
-                <#if column.javaType=="Long">
-            ${column.columnNameLower}Text.setText(String.valueOf(${classNameLower}.get${column.columnName}()));
-                <#elseif  column.isDateTimeColumn>
-            if (${classNameLower}.get${column.columnName}() == null) {
-                ${column.columnNameLower}Picker.getEditor().clear();
-                ${column.columnNameLower}Picker.setValue(null);
-            } else {
-                ${column.columnNameLower}Picker.setValue(${classNameLower}.get${column.columnName}().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-            }
+                <#if column.isDateTimeColumn>
+        ${column.columnNameLower}Picker.setValue(LocalDate.now());
                 <#else>
-            ${column.columnNameLower}Text.setText(${classNameLower}.get${column.columnName}());
+        ${column.columnNameLower}Text.clear();
                 </#if>
             </#if>
         </#list>
-        }
+    }
+
+    private void tableSelectionChanged(${className} ${classNameLower}) {
+        this.${classNameLower} = ${classNameLower};
     }
 
     private void saveTask(${className} ${classNameLower}) {
@@ -407,24 +315,47 @@ public class ${className}Controller implements Initializable {
         addBtn = FontAwesomeIconFactory.get().createIconButton(FontAwesomeIcon.PLUS, "添加");
         addBtn.setPrefSize(150, 50);
         addBtn.setDefaultButton(true);
+
         refreshBtn = FontAwesomeIconFactory.get().createIconButton(FontAwesomeIcon.REFRESH, "刷新");
         refreshBtn.setPrefSize(150, 50);
         refreshBtn.setDefaultButton(true);
 
+        detailBtn = FontAwesomeIconFactory.get().createIconButton(FontAwesomeIcon.FLOPPY_ALT, "详细");
+        detailBtn.setPrefSize(150, 50);
+        detailBtn.setDefaultButton(true);
+
+        mainPrintBtn = FontAwesomeIconFactory.get().createIconButton(FontAwesomeIcon.PRINT, "打印");
+        mainPrintBtn.setPrefSize(150, 50);
+        mainPrintBtn.setDefaultButton(true);
+
+        closeBtn = FontAwesomeIconFactory.get().createIconButton(FontAwesomeIcon.CLOSE, "关闭");
+        closeBtn.setPrefSize(150, 50);
+        closeBtn.setDefaultButton(true);
+
         mainToolBar.getItems().add(addBtn);
-        mainToolBar.getItems().add(refreshBtn);
+        // mainToolBar.getItems().add(refreshBtn);
+        mainToolBar.getItems().add(detailBtn);
+        mainToolBar.getItems().add(mainPrintBtn);
+        mainToolBar.getItems().add(closeBtn);
 
         saveBtn = FontAwesomeIconFactory.get().createIconButton(FontAwesomeIcon.FLOPPY_ALT, "保存");
         saveBtn.setPrefSize(150, 50);
         saveBtn.setDefaultButton(true);
+
+        backBtn = FontAwesomeIconFactory.get().createIconButton(FontAwesomeIcon.ARROW_LEFT, "返回");
+        backBtn.setPrefSize(150, 50);
+        backBtn.setDefaultButton(true);
+
         printBtn = FontAwesomeIconFactory.get().createIconButton(FontAwesomeIcon.PRINT, "打印");
         printBtn.setPrefSize(150, 50);
         printBtn.setDefaultButton(true);
 
+        detailToolBar.getItems().add(backBtn);
         detailToolBar.getItems().add(saveBtn);
         detailToolBar.getItems().add(printBtn);
-     }
+    }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void setupTable() {
         <#list table.columns as column>
             <#if column.isDateTimeColumn>
@@ -439,5 +370,11 @@ public class ${className}Controller implements Initializable {
         ${column.columnNameLower}.setCellValueFactory(new PropertyValueFactory<${className}, ${column.javaType}>("${column.columnNameLower}"));
             </#if>
         </#list>
+    }
+
+    @Override
+    public void update(Observable o, Object arg) {
+        // TODO Auto-generated method stub
+
     }
 }

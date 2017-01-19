@@ -5,12 +5,25 @@
 package ${basepackage}.service;
 
 import java.io.IOException;
+<#list table.columns as column>
+<#if column.javaType=="BigDecimal">
 import java.math.BigDecimal;
+<#break>
+</#if>
+</#list>
+<#list table.columns as column>
+<#if column.javaType=="Date">
+import java.util.Date;
+<#break>
+</#if>
+</#list>
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
@@ -50,7 +63,7 @@ public class ${className}Service extends AbstractService {
     <#list table.columns as column>
         <#if column.columnNameLower=="name">
     public Page<${className}> findByPage(PageRequest<${className}> pageRequest, String key) {
-        if (key==null || "".equals(key)) {
+        if (StringUtils.isBlank(key)) {
             return findByPage(pageRequest);
         }
         Page<${className}> list = dao.find(pageRequest, "select t from ${className} t where t.name like '%" + key + "%'",new ArrayList<>().toArray());
@@ -138,8 +151,6 @@ public class ${className}Service extends AbstractService {
             <#list table.columns as column>
                 <#if column.isDateTimeColumn>
             action.setParameter("${column.columnNameLower}", bean.get${column.columnName}()!=null?new Timestamp(bean.get${column.columnName}().getTime()):null);
-                <#elseif column.javaType=="Long">
-            action.setParameter("${column.columnNameLower}", bean.get${column.columnName}()!=null?new BigDecimal(bean.get${column.columnName}()):null);
                 <#else>
             action.setParameter("${column.columnNameLower}", bean.get${column.columnName}());
                 </#if>
@@ -175,8 +186,6 @@ public class ${className}Service extends AbstractService {
             <#list table.columns as column>
                 <#if column.isDateTimeColumn>
             action.setParameter("${column.columnNameLower}", bean.get${column.columnName}()!=null?new Timestamp(bean.get${column.columnName}().getTime()):null);
-                <#elseif column.javaType=="Long">
-            action.setParameter("${column.columnNameLower}", bean.get${column.columnName}()!=null?new BigDecimal(bean.get${column.columnName}()):null);
                 <#else>
             action.setParameter("${column.columnNameLower}", bean.get${column.columnName}());
                 </#if>
@@ -203,12 +212,56 @@ public class ${className}Service extends AbstractService {
 
     /*
 
+    <action name="sync${className}Action" global="false" procedure="sync${className}Procedure">
+        <label language="zh_CN">同步${className}</label>
+        <public type="DateTime" name="updateTime"></public>
+    </action>
+
+    <procedure name="sync${className}Procedure" code-model="/ERP/common/logic/code" code="Client.sync${className}">
+        <parameter name="updateTime" type="DateTime"/>
+    </procedure>
+
+    public static Map<String, Object> sync${className}(Timestamp updateTime) {
+        return select("${table.sqlName}", updateTime, <#if table.sqlName?index_of("MM_") != -1>mmDataModel<#elseif table.sqlName?index_of("PP_") != -1>ppDataModel<#else>mmDataModel</#if>);
+    }
+
+    <action name="uploadUpdate${className}Action" global="false" procedure="uploadUpdate${className}Procedure">
+        <label language="zh_CN">上传更新${className}记录</label>
+        <public type="List" name="${classNameLower}s"></public>
+    </action>
+
+    <procedure name="uploadUpdate${className}Procedure" code-model="/ERP/common/logic/code" code="Client.uploadUpdate${className}">
+        <parameter name="${classNameLower}s" type="List"/>
+    </procedure>
+
+    // 上传更新${className}记录
+    @SuppressWarnings({ "rawtypes", "unchecked"})
+    public static Map<String, Object> uploadUpdate${className}(List ${classNameLower}s) {
+        Map<String, Object> result = new HashMap<String, Object>();
+        try {
+            for (Object obj : ${classNameLower}s) {
+                Map vars = (Map) obj;
+                String ksql = "UPDATE ${table.sqlName} id SET <#list table.columns as column><#if !column.pk>id.${column.columnNameLower}=:${column.columnNameLower}<#if column_has_next>,</#if></#if></#list> " +
+                        " WHERE id=:id";
+                KSQL.executeUpdate(ksql, vars, mmDataModel, null);
+            }
+            result.put("flag", true);
+            result.put("msg", "");
+            result.put("result", "");
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("flag", false);
+            result.put("msg", e.getMessage());
+        }
+        return result;
+    }
+
     <action name="create${className}Action" global="false" procedure="create${className}Procedure">
         <label language="zh_CN">${table.tableAlias}</label>
         <#list table.columns as column>
             <#if column.isDateTimeColumn>
         <public name="${column.columnNameLower}" type="DateTime"></public>
-            <#elseif column.javaType=="Long">
+            <#elseif column.javaType=="BigDecimal">
         <public name="${column.columnNameLower}" type="Decimal"></public>
             <#else>
         <public name="${column.columnNameLower}" type="${column.javaType}"></public>
@@ -220,7 +273,7 @@ public class ${className}Service extends AbstractService {
         <#list table.columns as column>
             <#if column.isDateTimeColumn>
         <parameter name="${column.columnNameLower}" type="DateTime"></parameter>
-            <#elseif column.javaType=="Long">
+            <#elseif column.javaType=="BigDecimal">
         <parameter name="${column.columnNameLower}" type="Decimal"></parameter>
             <#else>
         <parameter name="${column.columnNameLower}" type="${column.javaType}"></parameter>
@@ -228,7 +281,7 @@ public class ${className}Service extends AbstractService {
         </#list>
     </procedure>
 
-    public static Map<String, Object> create${className}(<#list table.columns as column><#if column.isDateTimeColumn>Timestamp ${column.columnNameLower}<#if column_has_next>,</#if><#elseif column.javaType=="Long">BigDecimal ${column.columnNameLower}<#if column_has_next>,</#if><#else>${column.javaType} ${column.columnNameLower}<#if column_has_next>,</#if></#if></#list>) {
+    public static Map<String, Object> create${className}(<#list table.columns as column><#if column.isDateTimeColumn>Timestamp ${column.columnNameLower}<#if column_has_next>,</#if><#elseif column.javaType=="BigDecimal">BigDecimal ${column.columnNameLower}<#if column_has_next>,</#if><#else>${column.javaType} ${column.columnNameLower}<#if column_has_next>,</#if></#if></#list>) {
         Map<String, Object> result = new HashMap<String, Object>();
         try {
             HashMap<String,Object> vars = new HashMap<String,Object>();
@@ -256,9 +309,9 @@ public class ${className}Service extends AbstractService {
        ${classNameLower}.set${column.columnName}(bean.get${column.columnName}());
     </#list>
 
-    <#list table.columns as column><#if column.isDateTimeColumn>"${column.columnNameLower}","DateTime"<#elseif column.javaType=="Long">"${column.columnNameLower}","Decimal"<#else>"${column.columnNameLower}","${column.javaType}"</#if><#if column_has_next>,</#if></#list>
+    <#list table.columns as column><#if column.isDateTimeColumn>"${column.columnNameLower}","DateTime"<#elseif column.javaType=="BigDecimal">"${column.columnNameLower}","Decimal"<#else>"${column.columnNameLower}","${column.javaType}"</#if><#if column_has_next>,</#if></#list>
 
-    <#list table.columns as column><#if column.isDateTimeColumn>"${table.sqlName}.${column.columnNameLower}","DateTime"<#elseif column.javaType=="Long">"${table.sqlName}.${column.columnNameLower}","Decimal"<#else>"${table.sqlName}.${column.columnNameLower}","${column.javaType}"</#if><#if column_has_next>,</#if></#list>
+    <#list table.columns as column><#if column.isDateTimeColumn>"${table.sqlName}.${column.columnNameLower}","DateTime"<#elseif column.javaType=="BigDecimal">"${table.sqlName}.${column.columnNameLower}","Decimal"<#else>"${table.sqlName}.${column.columnNameLower}","${column.javaType}"</#if><#if column_has_next>,</#if></#list>
 
     while (it.hasNext()) {
            Map<String, Object> r = it.next();
@@ -287,7 +340,7 @@ public class ${className}Service extends AbstractService {
         <#list table.columns as column>
             <#if column.isDateTimeColumn>
         <public name="${column.columnNameLower}" type="DateTime"></public>
-            <#elseif column.javaType=="Long">
+            <#elseif column.javaType=="BigDecimal">
         <public name="${column.columnNameLower}" type="Decimal"></public>
             <#else>
         <public name="${column.columnNameLower}" type="${column.javaType}"></public>
@@ -299,7 +352,7 @@ public class ${className}Service extends AbstractService {
         <#list table.columns as column>
             <#if column.isDateTimeColumn>
         <parameter name="${column.columnNameLower}" type="DateTime"></parameter>
-            <#elseif column.javaType=="Long">
+            <#elseif column.javaType=="BigDecimal">
         <parameter name="${column.columnNameLower}" type="Decimal"></parameter>
             <#else>
         <parameter name="${column.columnNameLower}" type="${column.javaType}"></parameter>
@@ -307,7 +360,7 @@ public class ${className}Service extends AbstractService {
         </#list>
     </procedure>
 
-    public static Map<String, Object> update${className}(<#list table.columns as column><#if column.isDateTimeColumn>Timestamp ${column.columnNameLower}<#if column_has_next>,</#if><#elseif column.javaType=="Long">BigDecimal ${column.columnNameLower}<#if column_has_next>,</#if><#else>${column.javaType} ${column.columnNameLower}<#if column_has_next>,</#if></#if></#list>) {
+    public static Map<String, Object> update${className}(<#list table.columns as column><#if column.isDateTimeColumn>Timestamp ${column.columnNameLower}<#if column_has_next>,</#if><#elseif column.javaType=="BigDecimal">BigDecimal ${column.columnNameLower}<#if column_has_next>,</#if><#else>${column.javaType} ${column.columnNameLower}<#if column_has_next>,</#if></#if></#list>) {
         Map<String, Object> result = new HashMap<String, Object>();
         try {
             HashMap<String,Object> vars = new HashMap<String,Object>();

@@ -22,6 +22,7 @@ import com.isoftoon.utils.DateConvertUtils;
 
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -83,19 +84,7 @@ public class ${className}Dialog extends Stage implements Initializable {
         limit = new SimpleIntegerProperty(25);
         totalCount = new SimpleIntegerProperty(1);
 
-        <#list table.columns as column>
-            <#if column.isDateTimeColumn>
-        ${column.columnNameLower}.setCellValueFactory(cellData -> {
-            SimpleObjectProperty property = new SimpleObjectProperty();
-            if (cellData.getValue().get${column.columnName}() != null) {
-                property.setValue(DateConvertUtils.format(cellData.getValue().get${column.columnName}(),Constants.DATETIME_FORMAT));
-            }
-            return property;
-        });
-            <#else>
-        ${column.columnNameLower}.setCellValueFactory(new PropertyValueFactory<${className}, ${column.javaType}>("${column.columnNameLower}"));
-            </#if>
-        </#list>
+        setupTable();
 
         totalCount.addListener(new ChangeListener<Number>() {
             @Override
@@ -168,6 +157,7 @@ public class ${className}Dialog extends Stage implements Initializable {
 	public void search(ActionEvent event) {
 	    init();
 	}
+
 	@FXML
 	public void ok(ActionEvent event) {
 	    ${className} ${classNameLower} = ${classNameLower}Table.getSelectionModel().getSelectedItem();
@@ -176,10 +166,29 @@ public class ${className}Dialog extends Stage implements Initializable {
             close();
         }
 	}
+
 	@FXML
 	public void cancel(ActionEvent event) {
 	    close();
 	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+    private void setupTable() {
+        <#list table.columns as column>
+            <#if column.isDateTimeColumn>
+        ${column.columnNameLower}.setCellValueFactory(cellData -> {
+            SimpleObjectProperty property = new SimpleObjectProperty();
+            if (cellData.getValue().get${column.columnName}() != null) {
+                property.setValue(DateConvertUtils.format(cellData.getValue().get${column.columnName}(),Constants.DATETIME_FORMAT));
+            }
+            return property;
+        });
+            <#else>
+        ${column.columnNameLower}.setCellValueFactory(new PropertyValueFactory<${className}, ${column.javaType}>("${column.columnNameLower}"));
+            </#if>
+        </#list>
+    }
+
 	// <Button fx:id="select${className}Button" defaultButton="true" mnemonicParsing="false" prefHeight="30.0" text="选择" GridPane.columnIndex="2" />
 	// @FXML private Button select${className}Button;
 	/*
