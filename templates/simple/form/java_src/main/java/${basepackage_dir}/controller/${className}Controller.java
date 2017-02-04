@@ -334,7 +334,6 @@ public class ${className}Controller implements Initializable {
             Page<${className}> page = (Page<${className}>) event.getSource().getValue();
             logger.debug("列表：" + page.getResult());
             ${classNameLower}Table.getItems().clear();
-            ${classNameLower}Table.setItems(null);
             ${classNameLower}Table.setItems(get${className}s(page.getResult()));
             pagination.setCurrentPageIndex(pageIndex);
             totalCount.setValue(page.getTotalCount());
