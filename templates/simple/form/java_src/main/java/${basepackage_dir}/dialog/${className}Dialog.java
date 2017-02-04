@@ -5,6 +5,18 @@ package com.isoftoon.ld.fx.dialog;
 <#assign className = table.className>
 <#assign classNameLower = className?uncap_first>
 import java.io.IOException;
+<#list table.columns as column>
+<#if column.javaType=="BigDecimal">
+import java.math.BigDecimal;
+<#break>
+</#if>
+</#list>
+<#list table.columns as column>
+<#if column.javaType=="Date">
+import java.util.Date;
+<#break>
+</#if>
+</#list>
 import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.UUID;
