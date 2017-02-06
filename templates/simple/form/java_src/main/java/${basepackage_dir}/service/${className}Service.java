@@ -27,7 +27,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.isoftoon.ld.fx.model.${className};
+import com.isoftoon.ld.fx.model.$
+import com.isoftoon.ld.fx.model.OperateRecord;
 import com.isoftoon.ld.fx.utils.SimpleResult;
 import com.isoftoon.orm.McitHibernateTemplate;
 import com.isoftoon.orm.Page;
@@ -41,10 +42,12 @@ import com.justep.biz.client.data.impl.RowImpl;
 
 public class ${className}Service extends AbstractService {
     McitHibernateTemplate<${className}, String> dao = null;
+    McitHibernateTemplate<OperateRecord, String> daoOperateRecord = null;
 
     public ${className}Service() {
         super();
         dao = new McitHibernateTemplate<${className}, String>(${className}.class);
+        daoOperateRecord = new McitHibernateTemplate<OperateRecord, String>(OperateRecord.class);
     }
 
     @SuppressWarnings("unchecked")
@@ -70,6 +73,12 @@ public class ${className}Service extends AbstractService {
         </#if>
     </#list>
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public List<Map> findByIds(String[] ids) {
+        String hql = "select new map(<#list table.columns as column>s.${column.columnNameLower} as ${column.columnNameLower}<#if column_has_next>,</#if></#list>) from ${className} s where s.id in(:ids)";
+        return (List<Map>) dao.createQuery(hql).setParameterList("ids", ids).list();
+    }
+
     public void save(${className} model) throws IOException {
         dao.save(model);
     }
@@ -91,6 +100,7 @@ public class ${className}Service extends AbstractService {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Object excute(String sessionId, Object... params) {
         String action = (String) params[0];
@@ -101,6 +111,54 @@ public class ${className}Service extends AbstractService {
             return query(sessionId, params[1]);
         } else if ("update".equals(action)) {
             return update(sessionId, (${className}) params[1]);
+        } else if ("uploadUpdate${className}".equals(action)) {
+            return uploadUpdate${className}(sessionId, (List<OperateRecord>)params[1]);
+        }
+        return null;
+    }
+
+    @SuppressWarnings({ "rawtypes"})
+    private String uploadUpdate${className}(String sessionId, List<OperateRecord> operateRecords) {
+        String[] pkValues = new String[operateRecords.size()];
+        for (int i = 0; i < operateRecords.size(); i++) {
+            OperateRecord operateRecord = operateRecords.get(i);
+            pkValues[i] = operateRecord.getPkValue();
+        }
+
+        // 查询离线记录
+        List<Map> list = findByIds(pkValues);
+        if (CollectionUtils.isNotEmpty(list)) {
+            Action action = new Action();
+            // 指定动作的process、activity和action，这里要注意登录的用户应该有执行这个功能中的这个动作的权限
+            action.setProcess("/ERP/common/process/BaseCode/baseCodeProcess");
+            action.setActivity("clientActivity");
+            action.setName("uploadUpdate${className}Action");
+            action.setParameter("${classNameLower}s", list);
+
+            ActionResult actionResult = ActionEngine.invokeAction(action, ActionUtils.JSON_CONTENT_TYPE, sessionId, null, null);
+
+            // 判断是否调用成功
+            if (actionResult.isSuccess()) {
+                // 返回值
+                JSONObject json = (JSONObject) actionResult.getDatas().get(0);
+                JSONObject data = json.getJSONObject("value");
+
+                Map<String, Object> retMap = new Gson().fromJson(data.toString(), new TypeToken<HashMap<String, Object>>(){}.getType());
+                if ((boolean) retMap.get("flag") == true) {
+                    Date date = new Date();
+                    String flag = Constants.OPERATE_SUCCEED;
+                    for (OperateRecord record : operateRecords) {
+                        record.setSyncTime(date);
+                        record.setSyncResult(flag);
+                    }
+                    // 离线记录同步到服务器成功
+                    daoOperateRecord.saveList(operateRecords);
+                }
+                logger.debug(data.toJSONString());
+                return data.toJSONString();
+            } else {
+                throw new RuntimeException(actionResult.getMessage());
+            }
         }
         return null;
     }
