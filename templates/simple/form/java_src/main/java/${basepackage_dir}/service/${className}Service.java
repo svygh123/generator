@@ -268,6 +268,53 @@ public class ${className}Service extends AbstractService {
 
     /*
 
+    <action name="sync${className}Action" global="false" procedure="sync${className}Procedure">
+        <label language="zh_CN">同步${className}</label>
+        <public type="DateTime" name="updateTime"></public>
+    </action>
+
+    <procedure name="sync${className}Procedure" code-model="/ERP/common/logic/code" code="Client.sync${className}">
+        <parameter name="updateTime" type="DateTime"/>
+    </procedure>
+
+    public static Map<String, Object> sync${className}(Timestamp updateTime) {
+        return select("${table.sqlName}", updateTime, <#if table.sqlName?index_of("MM_") != -1>mmDataModel<#elseif table.sqlName?index_of("PP_") != -1>ppDataModel<#else>mmDataModel</#if>);
+    }
+
+    <action name="uploadUpdate${className}Action" global="false" procedure="uploadUpdate${className}Procedure">
+        <label language="zh_CN">上传更新${className}记录</label>
+        <public type="List" name="${classNameLower}s"></public>
+    </action>
+
+    <procedure name="uploadUpdate${className}Procedure" code-model="/ERP/common/logic/code" code="Client.uploadUpdate${className}">
+        <parameter name="${classNameLower}s" type="List"/>
+    </procedure>
+
+    <has-action action="uploadUpdate${className}Action"
+            access-permission="public"></has-action>
+
+    // 上传更新${className}记录
+    @SuppressWarnings({ "rawtypes", "unchecked"})
+    public static Map<String, Object> uploadUpdate${className}(List ${classNameLower}s) {
+        Map<String, Object> result = new HashMap<String, Object>();
+        try {
+            for (Object obj : ${classNameLower}s) {
+                Map vars = (Map) obj;
+                String ksql = "UPDATE ${table.sqlName} id SET <#list table.columns as column><#if !column.pk>id.${column.columnNameLower}=:${column.columnNameLower}<#if column_has_next>,</#if></#if></#list> " +
+                        " WHERE id=:id";
+                KSQL.executeUpdate(ksql, vars, mmDataModel, null);
+            }
+            result.put("flag", true);
+            result.put("msg", "");
+            result.put("result", "");
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("flag", false);
+            result.put("msg", e.getMessage());
+        }
+        return result;
+    }
+
     <action name="create${className}Action" global="false" procedure="create${className}Procedure">
         <label language="zh_CN">${table.tableAlias}</label>
         <#list table.columns as column>
@@ -317,7 +364,9 @@ public class ${className}Service extends AbstractService {
     }
 
     ${className} ${classNameLower} = new ${className}();
-    <#list table.columns as column>s.${classNameLower} as ${classNameLower}</#if><#if column_has_next>,</#if></#list>
+    <#list table.columns as column>
+       ${classNameLower}.set${column.columnName}(bean.get${column.columnName}());
+    </#list>
 
     <#list table.columns as column><#if column.isDateTimeColumn>"${column.columnNameLower}","DateTime"<#elseif column.javaType=="BigDecimal">"${column.columnNameLower}","Decimal"<#else>"${column.columnNameLower}","${column.javaType}"</#if><#if column_has_next>,</#if></#list>
 

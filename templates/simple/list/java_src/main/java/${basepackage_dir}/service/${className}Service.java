@@ -295,6 +295,9 @@ public class ${className}Service extends AbstractService {
         <parameter name="${classNameLower}s" type="List"/>
     </procedure>
 
+    <has-action action="uploadUpdate${className}Action"
+            access-permission="public"></has-action>
+
     // 上传更新${className}记录
     @SuppressWarnings({ "rawtypes", "unchecked"})
     public static Map<String, Object> uploadUpdate${className}(List ${classNameLower}s) {
