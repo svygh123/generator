@@ -27,7 +27,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.isoftoon.ld.fx.model.$
+import com.isoftoon.ld.fx.model.${className}
 import com.isoftoon.ld.fx.model.OperateRecord;
 import com.isoftoon.ld.fx.utils.SimpleResult;
 import com.isoftoon.orm.McitHibernateTemplate;
