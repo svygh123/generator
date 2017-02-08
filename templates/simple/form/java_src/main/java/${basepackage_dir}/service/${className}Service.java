@@ -17,6 +17,7 @@ import java.util.Date;
 <#break>
 </#if>
 </#list>
+import java.util.HashMap;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,12 +25,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.isoftoon.ld.fx.model.${className}
+import com.isoftoon.ld.fx.model.${className};
 import com.isoftoon.ld.fx.model.OperateRecord;
 import com.isoftoon.ld.fx.utils.SimpleResult;
 import com.isoftoon.orm.McitHibernateTemplate;
@@ -67,7 +69,7 @@ public class ${className}Service extends AbstractService {
     <#list table.columns as column>
         <#if column.columnNameLower=="name">
     public Page<${className}> findByPage(PageRequest<${className}> pageRequest, String key) {
-        if (key==null || "".equals(key)) {
+        if (StringUtils.isBlank(key)) {
             return findByPage(pageRequest);
         }
         Page<${className}> list = dao.find(pageRequest, "select t from ${className} t where t.name like '%" + key + "%'",new ArrayList<>().toArray());
@@ -114,14 +116,24 @@ public class ${className}Service extends AbstractService {
             return query(sessionId, params[1]);
         } else if ("update".equals(action)) {
             return update(sessionId, (${className}) params[1]);
+        } else if ("upload${className}".equals(action)) {
+            return upload${className}(sessionId, (List<OperateRecord>)params[1]);
         } else if ("uploadUpdate${className}".equals(action)) {
             return uploadUpdate${className}(sessionId, (List<OperateRecord>)params[1]);
         }
         return null;
     }
 
-    @SuppressWarnings({ "rawtypes"})
+    private String upload${className}(String sessionId, List<OperateRecord> operateRecords) {
+        return upload(sessionId, operateRecords, "upload${className}Action");
+    }
+
     private String uploadUpdate${className}(String sessionId, List<OperateRecord> operateRecords) {
+        return upload(sessionId, operateRecords, "uploadUpdate${className}Action");
+    }
+
+    @SuppressWarnings({ "rawtypes"})
+    private String upload(String sessionId, List<OperateRecord> operateRecords, String actionName) {
         String[] pkValues = new String[operateRecords.size()];
         for (int i = 0; i < operateRecords.size(); i++) {
             OperateRecord operateRecord = operateRecords.get(i);
@@ -135,7 +147,7 @@ public class ${className}Service extends AbstractService {
             // 指定动作的process、activity和action，这里要注意登录的用户应该有执行这个功能中的这个动作的权限
             action.setProcess("/ERP/common/process/BaseCode/baseCodeProcess");
             action.setActivity("clientActivity");
-            action.setName("uploadUpdate${className}Action");
+            action.setName(actionName);
             action.setParameter("${classNameLower}s", list);
 
             ActionResult actionResult = ActionEngine.invokeAction(action, ActionUtils.JSON_CONTENT_TYPE, sessionId, null, null);
@@ -285,7 +297,7 @@ public class ${className}Service extends AbstractService {
     }
 
     <action name="uploadUpdate${className}Action" global="false" procedure="uploadUpdate${className}Procedure">
-        <label language="zh_CN">上传更新${className}记录</label>
+        <label language="zh_CN">上传：${className}更新记录</label>
         <public type="List" name="${classNameLower}s"></public>
     </action>
 
@@ -296,7 +308,7 @@ public class ${className}Service extends AbstractService {
     <has-action action="uploadUpdate${className}Action"
             access-permission="public"></has-action>
 
-    // 上传更新${className}记录
+    // 上传：${className}更新记录
     @SuppressWarnings({ "rawtypes", "unchecked"})
     public static Map<String, Object> uploadUpdate${className}(List ${classNameLower}s) {
         Map<String, Object> result = new HashMap<String, Object>();
@@ -305,6 +317,40 @@ public class ${className}Service extends AbstractService {
                 Map vars = (Map) obj;
                 String ksql = "UPDATE ${table.sqlName} id SET <#list table.columns as column><#if !column.pk>id.${column.columnNameLower}=:${column.columnNameLower}<#if column_has_next>,</#if></#if></#list> " +
                         " WHERE id=:id";
+                KSQL.executeUpdate(ksql, vars, mmDataModel, null);
+            }
+            result.put("flag", true);
+            result.put("msg", "");
+            result.put("result", "");
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("flag", false);
+            result.put("msg", e.getMessage());
+        }
+        return result;
+    }
+
+    <action name="upload${className}Action" global="false" procedure="upload${className}Procedure">
+        <label language="zh_CN">上传：${className}更新记录</label>
+        <public type="List" name="${classNameLower}s"></public>
+    </action>
+
+    <procedure name="upload${className}Procedure" code-model="/ERP/common/logic/code" code="Client.upload${className}">
+        <parameter name="${classNameLower}s" type="List"/>
+    </procedure>
+
+    <has-action action="upload${className}Action"
+            access-permission="public"></has-action>
+
+    // 上传：${className}新增记录
+    @SuppressWarnings({ "rawtypes", "unchecked"})
+    public static Map<String, Object> upload${className}(List ${classNameLower}s) {
+        Map<String, Object> result = new HashMap<String, Object>();
+        try {
+            for (Object obj : inStocks) {
+                Map vars = (Map) obj;
+                String ksql = "INSERT INTO ${table.sqlName} id (<#list table.columns as column><#if column.pk>id,<#else>id.${column.columnNameLower}<#if column_has_next>,</#if></#if></#list>) " +
+                    " VALUES(<#list table.columns as column>:${column.columnNameLower}<#if column_has_next>,</#if></#list>)";
                 KSQL.executeUpdate(ksql, vars, mmDataModel, null);
             }
             result.put("flag", true);
