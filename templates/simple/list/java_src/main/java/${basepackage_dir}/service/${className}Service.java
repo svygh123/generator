@@ -331,7 +331,7 @@ public class ${className}Service extends AbstractService {
     }
 
     <action name="upload${className}Action" global="false" procedure="upload${className}Procedure">
-        <label language="zh_CN">上传：${className}更新记录</label>
+        <label language="zh_CN">上传：${className}新增记录</label>
         <public type="List" name="${classNameLower}s"></public>
     </action>
 
