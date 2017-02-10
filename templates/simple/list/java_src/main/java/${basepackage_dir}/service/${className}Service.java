@@ -317,7 +317,7 @@ public class ${className}Service extends AbstractService {
                 Map vars = (Map) obj;
                 String ksql = "UPDATE ${table.sqlName} id SET <#list table.columns as column><#if !column.pk>id.${column.columnNameLower}=:${column.columnNameLower}<#if column_has_next>,</#if></#if></#list> " +
                         " WHERE id=:id";
-                KSQL.executeUpdate(ksql, vars, mmDataModel, null);
+                KSQL.executeUpdate(ksql, vars, <#if table.sqlName?index_of("MM_") != -1>mmDataModel<#elseif table.sqlName?index_of("PP_") != -1>ppDataModel<#else>mmDataModel</#if>, null);
             }
             result.put("flag", true);
             result.put("msg", "");
@@ -351,7 +351,7 @@ public class ${className}Service extends AbstractService {
                 Map vars = (Map) obj;
                 String ksql = "INSERT INTO ${table.sqlName} id (<#list table.columns as column><#if column.pk>id,<#else>id.${column.columnNameLower}<#if column_has_next>,</#if></#if></#list>) " +
                     " VALUES(<#list table.columns as column>:${column.columnNameLower}<#if column_has_next>,</#if></#list>)";
-                KSQL.executeUpdate(ksql, vars, mmDataModel, null);
+                KSQL.executeUpdate(ksql, vars, <#if table.sqlName?index_of("MM_") != -1>mmDataModel<#elseif table.sqlName?index_of("PP_") != -1>ppDataModel<#else>mmDataModel</#if>, null);
             }
             result.put("flag", true);
             result.put("msg", "");
@@ -399,7 +399,7 @@ public class ${className}Service extends AbstractService {
 
             String ksql = "INSERT INTO ${table.sqlName} id (<#list table.columns as column><#if column.pk>id,<#else>id.${column.columnNameLower}<#if column_has_next>,</#if></#if></#list>) " +
                     " VALUES(<#list table.columns as column>:${column.columnNameLower}<#if column_has_next>,</#if></#list>)";
-            KSQL.executeUpdate(ksql, vars, mmDataModel, null);
+            KSQL.executeUpdate(ksql, vars, <#if table.sqlName?index_of("MM_") != -1>mmDataModel<#elseif table.sqlName?index_of("PP_") != -1>ppDataModel<#else>mmDataModel</#if>, null);
 
             result.put("flag", true);
             result.put("msg", "");
@@ -478,7 +478,7 @@ public class ${className}Service extends AbstractService {
 
             String ksql = "UPDATE ${table.sqlName} id SET <#list table.columns as column><#if !column.pk>id.${column.columnNameLower}=:${column.columnNameLower}<#if column_has_next>,</#if></#if></#list> " +
                     " WHERE id=:id";
-            KSQL.executeUpdate(ksql, vars, mmDataModel, null);
+            KSQL.executeUpdate(ksql, vars, <#if table.sqlName?index_of("MM_") != -1>mmDataModel<#elseif table.sqlName?index_of("PP_") != -1>ppDataModel<#else>mmDataModel</#if>, null);
 
             result.put("flag", true);
             result.put("msg", "");
