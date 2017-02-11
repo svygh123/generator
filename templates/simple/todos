@@ -1,0 +1,21 @@
+
+2017.2.11
+1.setupTable()方法里日期类型的列修改为dateFieldString列
+2.TableView修改为数据源绑定的方式
+3.按钮的触发时间改为setOnAction
+	xyzBtn.setOnAction(e -> {
+	    ......
+	});
+4.Platform的方法改为java8方式
+	Platform.runLater(() -> {
+	    outStockBarCodeText.clear();
+	    outStockBarCodeText.requestFocus();
+	});
+	原始写法为
+	Platform.runLater(new Runnable() {
+	    @Override
+	    public void run() {
+	        statusText.setText(Constants.IN_STOCKED_FLAG);
+	    }
+	});
+5.
