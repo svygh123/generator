@@ -347,7 +347,7 @@ public class ${className}Service extends AbstractService {
     public static Map<String, Object> upload${className}(List ${classNameLower}s) {
         Map<String, Object> result = new HashMap<String, Object>();
         try {
-            for (Object obj : inStocks) {
+            for (Object obj : ${classNameLower}s) {
                 Map vars = (Map) obj;
                 String ksql = "INSERT INTO ${table.sqlName} id (<#list table.columns as column><#if column.pk>id,<#else>id.${column.columnNameLower}<#if column_has_next>,</#if></#if></#list>) " +
                     " VALUES(<#list table.columns as column>:${column.columnNameLower}<#if column_has_next>,</#if></#list>)";
