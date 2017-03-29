@@ -292,6 +292,20 @@ public class ${className}Service extends AbstractService {
         }
         return result;
     }
+
+
+    //调用////////////////////////////////////////////////////////////////////////////////////////////////
+    // 上传：${className}新增记录
+    List<OperationRecord> offline${className}OperationRecords = operationRecordService.findOfflineOperationRecords(Constants.XXX, Constants.CREATE_ACTION);
+    if (CollectionUtils.isNotEmpty(offline${className}OperationRecords)) {
+        ${classNameLower}Service.run("upload${className}", offline${className}OperationRecords);
+    }
+
+    // 上传：${className}更新记录
+    List<OperationRecord> offlineUpdate${className}OperationRecords = operationRecordService.findOfflineOperationRecords(Constants.XXX, Constants.UPDATE_ACTION);
+    if (CollectionUtils.isNotEmpty(offlineUpdate${className}OperationRecords)) {
+        ${classNameLower}Service.run("uploadUpdate${className}", offlineUpdate${className}OperationRecords);
+    }
     */
 
 }
