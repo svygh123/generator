@@ -23,17 +23,27 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
 import com.alibaba.fastjson.JSONObject;
+import com.beust.jcommander.internal.Lists;
+import com.beust.jcommander.internal.Maps;
+import com.beust.jcommander.internal.Sets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.isoftoon.ld.fx.config.CurrentUserSession;
 import com.isoftoon.ld.fx.model.${className};
 import com.isoftoon.ld.fx.model.OperationRecord;
+import com.isoftoon.ld.fx.model.PrepareMaterial;
+import com.isoftoon.ld.fx.service.OperationRecordService;
+import com.isoftoon.ld.fx.utils.Actions;
 import com.isoftoon.ld.fx.utils.SimpleResult;
+import com.isoftoon.ld.fx.utils.SimpleResults;
+import com.isoftoon.ld.fx.utils.Transformer;
 import com.isoftoon.orm.McitHibernateTemplate;
 import com.isoftoon.orm.Page;
 import com.isoftoon.orm.PageRequest;
@@ -48,11 +58,13 @@ import com.justep.biz.client.data.impl.RowImpl;
 public class ${className}Service extends AbstractService {
     McitHibernateTemplate<${className}, String> dao = null;
     McitHibernateTemplate<OperationRecord, String> operationRecordDao = null;
+    OperationRecordService operationRecordService = null;
 
     public ${className}Service() {
         super();
         dao = new McitHibernateTemplate<${className}, String>(${className}.class);
         operationRecordDao = new McitHibernateTemplate<OperationRecord, String>(OperationRecord.class);
+        operationRecordService = new OperationRecordService();
     }
 
     @SuppressWarnings("unchecked")
@@ -78,10 +90,19 @@ public class ${className}Service extends AbstractService {
         </#if>
     </#list>
 
+    public ${className} findById(String id) {
+        return dao.get(id);
+    }
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public List<Map> findByIds(String[] ids) {
+    public List<Map> findByIds(Set<String> ids) {
         String hql = "select new map(<#list table.columns as column>s.${column.columnNameLower} as ${column.columnNameLower}<#if column_has_next>,</#if></#list>) from ${className} s where s.id in(:ids)";
         return (List<Map>) dao.createQuery(hql).setParameterList("ids", ids).list();
+    }
+
+    public Timestamp findLatestUpdateTime() {
+        Timestamp result = (Timestamp) dao.findUnique("select max(t.updateTime) from ${className} t");
+        return result;
     }
 
     public void save(${className} model) throws IOException {
@@ -93,116 +114,90 @@ public class ${className}Service extends AbstractService {
     }
 
     public void update(${className} model) throws IOException {
-        dao.save(model);
+        dao.update(model);
     }
 
-    public ${className} findById(String id) {
-        return dao.get(id);
-    }
+    @SuppressWarnings("rawtypes")
+    public void uploadCreated${className}() {
+        List<OperationRecord> operationRecords = operationRecordService.findByTabNameAndTypeAndNotUploaded(Constants.XXTableName, Constants.UPDATE_ACTION);
+        if (CollectionUtils.isNotEmpty(operationRecords)) {
+            Set<String> ids = Sets.newHashSet();
+            for (int i = 0; i < operationRecords.size(); i++) {
+                OperationRecord operationRecord = operationRecords.get(i);
+                ids.add(operationRecord.getPkValue());
+            }
 
-    public Timestamp findLatestUpdateTime() {
-        Timestamp result = (Timestamp) dao.findUnique("select max(t.updateTime) from ${className} t");
-        return result;
-    }
+            // 查询离线记录
+            List<Map> list = findByIds(ids);
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Object excute(String sessionId, Object... params) {
-        String action = (String) params[0];
+            Action action = Actions.newAction("uploadCreated${className}Action", "${classNameLower}s", list);
 
-        if ("queryServerFromTime".equals(action)) {
-            return queryServerFromTime(sessionId, params[1]);
-        } else if ("upload${className}".equals(action)) {
-            return upload${className}(sessionId, (List<OperationRecord>)params[1]);
-        } else if ("uploadUpdate${className}".equals(action)) {
-            return uploadUpdate${className}(sessionId, (List<OperationRecord>)params[1]);
-        }
-        return null;
-    }
+            String result = (String) run(action.getName(), action);
 
-    private String upload${className}(String sessionId, List<OperationRecord> operationRecords) {
-        return upload(sessionId, operationRecords, "upload${className}Action");
-    }
+            ResponseEntity resp = Transformer.transform(result);
 
-    private String uploadUpdate${className}(String sessionId, List<OperationRecord> operationRecords) {
-        return upload(sessionId, operationRecords, "uploadUpdate${className}Action");
-    }
-
-    @SuppressWarnings({ "rawtypes"})
-    private String upload(String sessionId, List<OperationRecord> operationRecords, String actionName) {
-        String[] pkValues = new String[operationRecords.size()];
-        for (int i = 0; i < operationRecords.size(); i++) {
-            OperationRecord operationRecord = operationRecords.get(i);
-            pkValues[i] = operationRecord.getPkValue();
-        }
-
-        // 查询离线记录
-        List<Map> list = findByIds(pkValues);
-        if (CollectionUtils.isNotEmpty(list)) {
-            Action action = new Action();
-            // 指定动作的process、activity和action，这里要注意登录的用户应该有执行这个功能中的这个动作的权限
-            action.setProcess("/ERP/common/process/BaseCode/baseCodeProcess");
-            action.setActivity("clientActivity");
-            action.setName(actionName);
-            action.setParameter("${classNameLower}s", list);
-
-            ActionResult actionResult = ActionEngine.invokeAction(action, ActionUtils.JSON_CONTENT_TYPE, sessionId, null, null);
-
-            // 判断是否调用成功
-            if (actionResult.isSuccess()) {
-                // 返回值
-                JSONObject json = (JSONObject) actionResult.getDatas().get(0);
-                JSONObject data = json.getJSONObject("value");
-
-                Map<String, Object> retMap = new Gson().fromJson(data.toString(), new TypeToken<HashMap<String, Object>>(){}.getType());
-                if ((boolean) retMap.get("flag") == true) {
-                    Date date = new Date();
-                    String flag = Constants.OPERATE_SUCCEED;
-                    for (OperationRecord record : operationRecords) {
-                        record.setSyncTime(date);
-                        record.setSyncResult(flag);
-                    }
-                    // 离线记录同步到服务器成功
-                    operationRecordDao.saveList(operationRecords);
+            if (resp.isSuccessful()) {
+                Date now = new Date();
+                String success = Constants.OPERATE_SUCCEED;
+                for (OperationRecord operationRecord : operationRecords) {
+                    operationRecord.setSyncTime(now);
+                    operationRecord.setSyncResult(success);
                 }
-                logger.debug(data.toJSONString());
-                return data.toJSONString();
-            } else {
-                throw new RuntimeException(actionResult.getMessage());
+                // 离线记录同步到服务器成功
+                operationRecordDao.saveList(operationRecords);
             }
         }
-        return null;
     }
 
-    public List<${className}> queryServerFromTime(Timestamp obj) {
-        String result = (String) run("queryServerFromTime", obj);
+    @SuppressWarnings("rawtypes")
+    public void uploadUpdated${className}() {
+        List<OperationRecord> operationRecords = operationRecordService.findByTabNameAndTypeAndNotUploaded(Constants.XXTableName, Constants.UPDATE_ACTION);
+        if (CollectionUtils.isNotEmpty(operationRecords)) {
+            Set<String> ids = Sets.newHashSet();
+            for (int i = 0; i < operationRecords.size(); i++) {
+                OperationRecord operationRecord = operationRecords.get(i);
+                ids.add(operationRecord.getPkValue());
+            }
 
-        Gson gson = new GsonBuilder().registerTypeAdapter(Date.class, new DateDeserializer()).create();
-        SimpleResult gist = gson.fromJson(result, SimpleResult.class);
+            // 查询离线记录
+            List<Map> list = findByIds(ids);
 
-        return null == gist ? null : gson.fromJson(gson.toJson(gist.getResult()), new TypeToken<List<${className}>>() {
-        }.getType());
+            Action action = Actions.newAction("uploadUpdated${className}Action", "${classNameLower}s", list);
+
+            String result = (String) run(action.getName(), action);
+
+            ResponseEntity resp = Transformer.transform(result);
+
+            if (resp.isSuccessful()) {
+                Date now = new Date();
+                String success = Constants.OPERATE_SUCCEED;
+                for (OperationRecord operationRecord : operationRecords) {
+                    operationRecord.setSyncTime(now);
+                    operationRecord.setSyncResult(success);
+                }
+                // 离线记录同步到服务器成功
+                operationRecordDao.saveList(operationRecords);
+            }
+        }
     }
 
-    private String queryServerFromTime(String sessionId, Object updateTime) {
-        Action action = new Action();
-        // 指定动作的process、activity和action，这里要注意登录的用户应该有执行这个功能中的这个动作的权限
-        action.setProcess("/ERP/common/process/BaseCode/baseCodeProcess");
-        action.setActivity("clientActivity");
-        action.setName("sync${className}Action");
-        action.setParameter("updateTime", updateTime);
+    public List<${className}> queryServerFromTime(Timestamp lastestTime) {
+        Map<Object, Object> params = Maps.newHashMap("updateTime", lastestTime);
+        Action action = Actions.newAction("sync${className}Action", "params", params);
+        String result = (String) run(action.getName(), action);
+        return Transformer.toList(result, ${className}[].class);
+    }
 
+    @Override
+    public Object excute(String sessionId, Object... params) {
+        Action action = (Action) params[1];
         ActionResult actionResult = ActionEngine.invokeAction(action, ActionUtils.JSON_CONTENT_TYPE, sessionId, null, null);
-
-        // 判断是否调用成功
         if (actionResult.isSuccess()) {
-            // 返回值
             JSONObject json = (JSONObject) actionResult.getDatas().get(0);
             JSONObject data = json.getJSONObject("value");
-
-            logger.debug(data.toJSONString());
             return data.toJSONString();
         } else {
+            logger.error(actionResult.getMessage());
             throw new RuntimeException(actionResult.getMessage());
         }
     }
@@ -212,33 +207,33 @@ public class ${className}Service extends AbstractService {
     //同步服务器数据到本地////////////////////////////////////////////////////////////////////////////////////////////////
     <action name="sync${className}Action" global="false" procedure="sync${className}Procedure">
         <label language="zh_CN">同步${className}</label>
-        <public type="DateTime" name="updateTime"></public>
+        <public type="Map" name="params" />
     </action>
 
     <procedure name="sync${className}Procedure" code-model="/ERP/common/logic/code" code="Client.sync${className}">
-        <parameter name="updateTime" type="DateTime"/>
+        <parameter type="Map" name="params" />
     </procedure>
 
-    public static Map<String, Object> sync${className}(Timestamp updateTime) {
-        return select("${table.sqlName}", updateTime, <#if table.sqlName?index_of("MM_") != -1>mmDataModel<#elseif table.sqlName?index_of("PP_") != -1>ppDataModel<#else>mmDataModel</#if>);
+    public static Map<String, Object> sync${className}(Map params) {
+        return select("${table.sqlName}", params.get("updateTime") == null ? null : (params.get("updateTime").toString().length() == 0 ? null : (Timestamp) params.get("updateTime")), <#if table.sqlName?index_of("MM_") != -1>mmDataModel<#elseif table.sqlName?index_of("PP_") != -1>ppDataModel<#else>mmDataModel</#if>);
     }
 
 
     //上传本地修改的数据到服务器////////////////////////////////////////////////////////////////////////////////////////////////
-    <action name="uploadUpdate${className}Action" global="false" procedure="uploadUpdate${className}Procedure">
+    <action name="uploadUpdated${className}Action" global="false" procedure="uploadUpdated${className}Procedure">
         <label language="zh_CN">上传：${className}更新记录</label>
         <public type="List" name="${classNameLower}s"></public>
     </action>
 
-    <procedure name="uploadUpdate${className}Procedure" code-model="/ERP/common/logic/code" code="Client.uploadUpdate${className}">
+    <procedure name="uploadUpdated${className}Procedure" code-model="/ERP/common/logic/code" code="Client.uploadUpdated${className}">
         <parameter name="${classNameLower}s" type="List"/>
     </procedure>
 
-    <has-action action="uploadUpdate${className}Action" access-permission="public"></has-action>
+    <has-action action="uploadUpdated${className}Action" access-permission="public"></has-action>
 
     // 上传：${className}更新记录
     @SuppressWarnings({ "rawtypes", "unchecked"})
-    public static Map<String, Object> uploadUpdate${className}(List ${classNameLower}s) {
+    public static Map<String, Object> uploadUpdated${className}(List ${classNameLower}s) {
         Map<String, Object> result = new HashMap<String, Object>();
         try {
             for (Object obj : ${classNameLower}s) {
@@ -259,21 +254,21 @@ public class ${className}Service extends AbstractService {
     }
 
 
-    //上传本地修改的数据到服务器////////////////////////////////////////////////////////////////////////////////////////////////
-    <action name="upload${className}Action" global="false" procedure="upload${className}Procedure">
+    //上传本地新增的数据到服务器////////////////////////////////////////////////////////////////////////////////////////////////
+    <action name="uploadCreated${className}Action" global="false" procedure="uploadCreated${className}Procedure">
         <label language="zh_CN">上传：${className}新增记录</label>
         <public type="List" name="${classNameLower}s"></public>
     </action>
 
-    <procedure name="upload${className}Procedure" code-model="/ERP/common/logic/code" code="Client.upload${className}">
+    <procedure name="uploadCreated${className}Procedure" code-model="/ERP/common/logic/code" code="Client.uploadCreated${className}">
         <parameter name="${classNameLower}s" type="List"/>
     </procedure>
 
-    <has-action action="upload${className}Action" access-permission="public"></has-action>
+    <has-action action="uploadCreated${className}Action" access-permission="public"></has-action>
 
     // 上传：${className}新增记录
     @SuppressWarnings({ "rawtypes", "unchecked"})
-    public static Map<String, Object> upload${className}(List ${classNameLower}s) {
+    public static Map<String, Object> uploadCreated${className}(List ${classNameLower}s) {
         Map<String, Object> result = new HashMap<String, Object>();
         try {
             for (Object obj : ${classNameLower}s) {
@@ -296,16 +291,10 @@ public class ${className}Service extends AbstractService {
 
     //调用////////////////////////////////////////////////////////////////////////////////////////////////
     // 上传：${className}新增记录
-    List<OperationRecord> offline${className}OperationRecords = operationRecordService.findOfflineOperationRecords(Constants.XXX, Constants.CREATE_ACTION);
-    if (CollectionUtils.isNotEmpty(offline${className}OperationRecords)) {
-        ${classNameLower}Service.run("upload${className}", offline${className}OperationRecords);
-    }
+    ${classNameLower}Service.uploadCreated${className}();
 
     // 上传：${className}更新记录
-    List<OperationRecord> offlineUpdate${className}OperationRecords = operationRecordService.findOfflineOperationRecords(Constants.XXX, Constants.UPDATE_ACTION);
-    if (CollectionUtils.isNotEmpty(offlineUpdate${className}OperationRecords)) {
-        ${classNameLower}Service.run("uploadUpdate${className}", offlineUpdate${className}OperationRecords);
-    }
+    ${classNameLower}Service.uploadUpdated${className}();
     */
 
 }
