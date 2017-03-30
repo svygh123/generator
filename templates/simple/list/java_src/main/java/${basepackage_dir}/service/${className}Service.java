@@ -213,6 +213,8 @@ public class ${className}Service extends AbstractService {
         <parameter type="Map" name="params" />
     </procedure>
 
+    <has-action action="sync${className}Action" access-permission="public"></has-action>
+
     public static Map<String, Object> sync${className}(Map params) {
         return select("${table.sqlName}", params.get("updateTime") == null ? null : (params.get("updateTime").toString().length() == 0 ? null : (Timestamp) params.get("updateTime")), <#if table.sqlName?index_of("MM_") != -1>mmDataModel<#elseif table.sqlName?index_of("PP_") != -1>ppDataModel<#else>mmDataModel</#if>);
     }
