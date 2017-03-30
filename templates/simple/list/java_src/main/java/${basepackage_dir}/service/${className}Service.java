@@ -203,7 +203,7 @@ public class ${className}Service extends AbstractService {
 
     /*
 
-    //同步服务器数据到本地////////////////////////////////////////////////////////////////////////////////////////////////
+    // 同步服务器数据到本地////////////////////////////////////////////////////////////////////////////////////////////////
     <action name="sync${className}Action" global="false" procedure="sync${className}Procedure">
         <label language="zh_CN">同步${className}</label>
         <public type="Map" name="params" />
@@ -220,7 +220,7 @@ public class ${className}Service extends AbstractService {
     }
 
 
-    //上传本地修改的数据到服务器////////////////////////////////////////////////////////////////////////////////////////////////
+    // 上传本地修改的数据到服务器////////////////////////////////////////////////////////////////////////////////////////////////
     <action name="uploadUpdated${className}Action" global="false" procedure="uploadUpdated${className}Procedure">
         <label language="zh_CN">上传：${className}更新记录</label>
         <public type="List" name="${classNameLower}s"></public>
@@ -255,7 +255,7 @@ public class ${className}Service extends AbstractService {
     }
 
 
-    //上传本地新增的数据到服务器////////////////////////////////////////////////////////////////////////////////////////////////
+    // 上传本地新增的数据到服务器////////////////////////////////////////////////////////////////////////////////////////////////
     <action name="uploadCreated${className}Action" global="false" procedure="uploadCreated${className}Procedure">
         <label language="zh_CN">上传：${className}新增记录</label>
         <public type="List" name="${classNameLower}s"></public>
@@ -290,12 +290,14 @@ public class ${className}Service extends AbstractService {
     }
 
 
-    //调用////////////////////////////////////////////////////////////////////////////////////////////////
+    // 调用////////////////////////////////////////////////////////////////////////////////////////////////
+
     // 上传：${className}新增记录
     ${classNameLower}Service.uploadCreated${className}();
 
     // 上传：${className}更新记录
     ${classNameLower}Service.uploadUpdated${className}();
+
     */
 
 }
