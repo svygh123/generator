@@ -118,7 +118,7 @@ public class ${className}Service extends AbstractService {
 
     @SuppressWarnings("rawtypes")
     public void uploadCreated${className}() {
-        List<OperationRecord> operationRecords = operationRecordService.findByTabNameAndTypeAndNotUploaded(Constants.XXTableName, Constants.UPDATE_ACTION);
+        List<OperationRecord> operationRecords = operationRecordService.findByTabNameAndTypeAndNotUploaded(Constants.XXTableName, Constants.CREATE_ACTION);
         if (CollectionUtils.isNotEmpty(operationRecords)) {
             Set<String> ids = Sets.newHashSet();
             for (int i = 0; i < operationRecords.size(); i++) {
