@@ -187,20 +187,6 @@ public class ${className}Service extends AbstractService {
         return Transformer.toList(result, ${className}[].class);
     }
 
-    @Override
-    public Object excute(String sessionId, Object... params) {
-        Action action = (Action) params[1];
-        ActionResult actionResult = ActionEngine.invokeAction(action, ActionUtils.JSON_CONTENT_TYPE, sessionId, null, null);
-        if (actionResult.isSuccess()) {
-            JSONObject json = (JSONObject) actionResult.getDatas().get(0);
-            JSONObject data = json.getJSONObject("value");
-            return data.toJSONString();
-        } else {
-            logger.error(actionResult.getMessage());
-            throw new RuntimeException(actionResult.getMessage());
-        }
-    }
-
     /*
 
     // 同步服务器数据到本地////////////////////////////////////////////////////////////////////////////////////////////////
