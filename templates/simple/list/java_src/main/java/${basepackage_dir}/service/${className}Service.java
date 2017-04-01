@@ -180,8 +180,8 @@ public class ${className}Service extends AbstractService {
         }
     }
 
-    public List<${className}> queryServerFromTime(Timestamp lastestTime) {
-        Map<Object, Object> params = Maps.newHashMap("updateTime", lastestTime);
+    public List<${className}> sync${className}(Timestamp lastModified) {
+        Map<Object, Object> params = Maps.newHashMap("updateTime", lastModified);
         Action action = Actions.newAction("sync${className}Action", "params", params);
         String result = (String) run(action.getName(), action);
         return Transformer.toList(result, ${className}[].class);
