@@ -4,7 +4,6 @@
 <#assign classNameLower = className?uncap_first>
 package ${basepackage}.service;
 
-import java.io.IOException;
 <#list table.columns as column>
 <#if column.javaType=="BigDecimal">
 import java.math.BigDecimal;
@@ -67,19 +66,19 @@ public class ${className}Service extends AbstractService {
     }
 
     @SuppressWarnings("unchecked")
-    public List<${className}> findAll() {
+    public List<${className}> findAll() throws Exception {
         List<${className}> list = dao.createQuery("from ${className}").list();
         return list;
     }
 
-    public Page<${className}> findByPage(PageRequest<${className}> pageRequest) {
+    public Page<${className}> findByPage(PageRequest<${className}> pageRequest) throws Exception {
         Page<${className}> list = dao.find(pageRequest, "select t from ${className} t order by t.createTime desc", new ArrayList<>().toArray());
         return list;
     }
 
     <#list table.columns as column>
         <#if column.columnNameLower=="name">
-    public Page<${className}> findByPage(PageRequest<${className}> pageRequest, String key) {
+    public Page<${className}> findByPage(PageRequest<${className}> pageRequest, String key) throws Exception {
         if (StringUtils.isBlank(key)) {
             return findByPage(pageRequest);
         }
@@ -89,17 +88,17 @@ public class ${className}Service extends AbstractService {
         </#if>
     </#list>
 
-    public ${className} findById(String id) {
+    public ${className} findById(String id) throws Exception {
         return dao.get(id);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public List<Map> findByIds(Set<String> ids) {
+    public List<Map> findByIds(Set<String> ids) throws Exception {
         String hql = "select new map(<#list table.columns as column>s.${column.columnNameLower} as ${column.columnNameLower}<#if column_has_next>,</#if></#list>) from ${className} s where s.id in(:ids)";
         return (List<Map>) dao.createQuery(hql).setParameterList("ids", ids).list();
     }
 
-    public Timestamp findLatestUpdateTime() {
+    public Timestamp findLatestUpdateTime() throws Exception {
         Timestamp result = (Timestamp) dao.findUnique("select max(t.updateTime) from ${className} t");
         return result;
     }
@@ -108,16 +107,16 @@ public class ${className}Service extends AbstractService {
         dao.save(model);
     }
 
-    public void saveList(List<${className}> ${classNameLower}s) throws IOException {
+    public void saveList(List<${className}> ${classNameLower}s) throws Exception {
         dao.saveList(${classNameLower}s);
     }
 
-    public void update(${className} model) throws IOException {
+    public void update(${className} model) throws Exception {
         dao.update(model);
     }
 
     @SuppressWarnings("rawtypes")
-    public void uploadCreated${className}() {
+    public void uploadCreated${className}() throws Exception {
         List<OperationRecord> operationRecords = operationRecordService.findByTabNameAndTypeAndNotUploaded(Constants.XXTableName, Constants.CREATE_ACTION);
         if (CollectionUtils.isNotEmpty(operationRecords)) {
             Set<String> ids = Sets.newHashSet();
@@ -149,7 +148,7 @@ public class ${className}Service extends AbstractService {
     }
 
     @SuppressWarnings("rawtypes")
-    public void uploadUpdated${className}() {
+    public void uploadUpdated${className}() throws Exception {
         List<OperationRecord> operationRecords = operationRecordService.findByTabNameAndTypeAndNotUploaded(Constants.XXTableName, Constants.UPDATE_ACTION);
         if (CollectionUtils.isNotEmpty(operationRecords)) {
             Set<String> ids = Sets.newHashSet();
@@ -180,7 +179,7 @@ public class ${className}Service extends AbstractService {
         }
     }
 
-    public List<${className}> sync${className}(Timestamp lastModified) {
+    public List<${className}> sync${className}(Timestamp lastModified) throws Exception {
         Map<Object, Object> params = Maps.newHashMap("updateTime", lastModified);
         Action action = Actions.newAction("sync${className}Action", "params", params);
         String result = (String) run(action.getName(), action);
@@ -284,6 +283,17 @@ public class ${className}Service extends AbstractService {
     // 上传：${className}更新记录
     ${classNameLower}Service.uploadUpdated${className}();
 
+    // insert语句hql写法
+    sql = "insert into ${table.sqlName}(<#list table.columns as column>${column.columnNameLower}<#if column_has_next>,</#if></#list>) values(<#list table.columns as column>:${column.columnNameLower}<#if column_has_next>,</#if></#list>) ";
+    session.createSQLQuery(sql)
+            <#list table.columns as column>
+            <#if !column.isDateTimeColumn>
+            .setParameter("${column.columnNameLower}", record.get("${column.columnNameLower}"))
+            <#else>
+            .setTimestamp("${column.columnNameLower}", Constants.TIMESTAMP_FORMATTER.parse((String) record.get("${column.columnNameLower}")))
+            </#if>
+            </#list>
+           .executeUpdate();
     */
 
 }
