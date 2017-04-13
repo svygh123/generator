@@ -16,6 +16,7 @@ import java.math.BigDecimal;
     <#if column.javaType=="Date">
 import java.util.Date;
 import com.isoftoon.utils.DateConvertUtils;
+import javafx.scene.control.DatePicker;
 <#break>
     </#if>
 </#list>
